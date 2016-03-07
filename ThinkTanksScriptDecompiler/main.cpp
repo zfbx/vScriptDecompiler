@@ -32,4 +32,3 @@ int main()
 	getchar();
 	exit(0);
 }
-

@@ -472,7 +472,7 @@ public:
 	}
 	CodeWriter& format(const char* fmt, ...)
 	{
-		char *ret;
+		char *ret = NULL;
 
 		ensureIndent();
 		va_list args;
@@ -530,7 +530,7 @@ public:
 		U32 len = strlen(string);
 		if (len == 0)
 			return true;
-		for (int i = 0; i < len; ++i){
+		for (U32 i = 0; i < len; ++i){
 			if (!isspace(string[i]))
 				return false;
 		}
@@ -1398,7 +1398,7 @@ public:
 					writer.append(fnName);
 				}
 				writer.append("(");
-				for (int i = 0; i < argc; ++i){
+				for (U32 i = 0; i < argc; ++i){
 					StringTableEntry argName = block.CodeToSTE(code, ip + 6 + i);
 					if (i != 0) writer.append(", ");
 					writer.append(argName && argName[0] ? argName : "%unused");

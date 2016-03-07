@@ -382,7 +382,7 @@ void CodeBlock::dumpStrings(char * stringBuffer) {
 	U32 count = 0;
 	for (p = stringBuffer; p < stringBufferEnd; p++) {
 		if (*p == '\0') {
-			printf("%c%02u (os=0x%08X) = \"%s\"\n", stringBuffer == globalStrings ? 'G' : 'F', count, prev_start-stringBuffer, prev_start);
+			printf("%c%02u (os=0x%08X) = \"%s\"\n", stringBuffer == globalStrings ? 'G' : 'F', count, (U32)(prev_start-stringBuffer), prev_start);
 			prev_start = p + 1;
 
 			count++;
@@ -417,7 +417,7 @@ void CodeBlock::dumpCode(bool strings) {
 				printf("\n0x%08X : ", ip);
 		}
 
-		char *stringInfo;
+		char *stringInfo = NULL;
 		if(strings)
 			stringInfo = findStringInfoFromPointer((char*)curCode);
 
