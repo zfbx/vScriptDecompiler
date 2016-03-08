@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
 		cb.dumpInstructions(0, 0, false);
 
 	if (decompile) {
-		cerr << "Decompiling...";
+		cerr << "Decompiling..." << endl;
 		cout << Decompile(cb);
 	}
 
