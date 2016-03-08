@@ -150,14 +150,20 @@ struct Expression
 		type = FLOATLITERAL;
 		floatVal = val;
 	}
-	void set(StringTableEntry val, bool copy = false){
+	void set(StringTableEntry val, bool copy = true){
 		//Note: val might be NULL when doing OP_SETCUROBJECT_NEW
 		//cout << "set(STE '" << val << "', " << copy << ");" << endl;
 		reset();
-		if (copy && val && val[0]) {
-			type = STRINGALLOC;
-			memory = malloc(strlen(val) + 1);
-			strVal = strcpy((char*)memory, val);
+		if (copy) {
+			if (val && val[0]) {
+				type = STRINGALLOC;
+				memory = malloc(strlen(val) + 1);
+				strVal = strcpy((char*)memory, val);
+			}
+			else {
+				type = STRINGLITERAL;
+				strVal = "";
+			}
 		}
 		else {
 			type = STRINGLITERAL;
@@ -770,7 +776,11 @@ public:
 			{
 				CodeWriter &writer = (*this->curWriter);
 				writer.endBlock();
-				ASSERT2(_EXPR > maxExpr, "Unprocessed expressions: %d at 0x%08X\n", _EXPR, ip);
+
+				if (_EXPR > maxExpr) {
+					fprintf(stderr, "Unprocessed expressions: %d at 0x%08X\n", _EXPR, ip);
+				}
+
 				if (_EXPR > maxExpr)
 					writer.format("/* %d | %d */", _EXPR, ip);
 				writer.needLine();
@@ -787,7 +797,10 @@ public:
 		}
 		if (changed)
 		{
-			ASSERT2(_EXPR > maxExpr, "Unprocessed expressions: %d at 0x%08X\n", _EXPR, ip);
+			if (_EXPR > maxExpr) {
+				fprintf(stderr, "Unprocessed expressions: %d at 0x%08X\n", _EXPR, ip);
+			}
+
 			if (_EXPR > maxExpr)
 			{
 				for (U32 idx = maxExpr; idx < _EXPR; ++idx)
@@ -797,7 +810,10 @@ public:
 		}
 		if (changed && _FRAME == 0)
 		{
-			ASSERT2(_EXPR != 0, "Unprocessed expressions: %d at 0x%08X\n", _EXPR, ip);
+			if (_EXPR > maxExpr) {
+				fprintf(stderr, "Unprocessed expressions: %d at 0x%08X\n", _EXPR, ip);
+			}
+
 			SetGlobalTable();
 		}
 	}
@@ -1391,6 +1407,7 @@ public:
 		U32 iterDepth = 0;
 		bool invertJump = false;
 		StringTableEntry curVar = NULL, curField = NULL, curObject = NULL;
+		std::string curVarBuffer; //If required
 		U32 inObject = 0;
 		reset();
 		UpdatePackage(NULL);// start out in global scope		
@@ -1519,9 +1536,11 @@ public:
 					str.erase(str.length() - 3, 3);
 				curWriter->append("///").append(str.c_str()).appendline();
 			} break;*/
-			case OP_LOADIMMED_IDENT: 
-				pushExpr().set(block.CodeToSTE(code, ip++));
-				break;
+			case OP_LOADIMMED_IDENT:
+			{
+				StringTableEntry identName = block.CodeToSTE(code, ip++);
+				pushExpr().set(identName, true);
+			}	break;
 
 			case OP_LOADIMMED_UINT: 
 				pushExpr().set(code[ip++]); 
@@ -1847,7 +1866,17 @@ public:
 			case OP_UINT_TO_NONE:
 				CheckFrameWrite();
 				CheckPackageScope();
+
+				writeCurrentExpr(*curWriter);
+				(*curWriter).endLine();
+				popExpr();
+
+				/*Frame &curFrame = GetCurrentFrame();
+				if (curFrame.type == Frame::OBJECT) {
+					CheckFrameEnd(ip);
+				}*/
 				CheckFrameEnd(ip);
+
 				writeCurrentExpr(*curWriter);
 				(*curWriter).endLine();
 				popExpr();
@@ -1866,8 +1895,10 @@ public:
 				writeExpr(literalStr, arg1); // TODO: need to convert string to integer if quoted string
 				literalStr.append("]");
 				popExpr();
-
-				curVar = literalStr.end().c_str();
+				
+				// Hackish way to solve the lifetime problem of literalString
+				curVarBuffer = literalStr.end();
+				curVar = curVarBuffer.c_str();
 			} break;
 
 			case OP_CREATE_OBJECT:

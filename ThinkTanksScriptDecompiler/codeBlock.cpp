@@ -970,6 +970,9 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 
 		case OP_SAVEVAR_UINT:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_SAVEVAR_UINT\n");
 			break;
 		}
