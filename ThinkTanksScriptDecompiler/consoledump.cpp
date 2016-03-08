@@ -2108,7 +2108,7 @@ bool DecompileWrite(String fileName_out, CodeBlock& cb)
 	ofile << decompiled;
 
 	ofile.close();
-	cerr << "Done." << endl;
+	cerr << "Finished decompiling." << endl;
 
 	return true;
 }

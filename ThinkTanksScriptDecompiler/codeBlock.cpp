@@ -128,7 +128,9 @@ bool CodeBlock::read(Stream &st)
 	assert(version == 0x21);
 
 	size = stream_readi(st);
+#ifdef VERBOSE_CODEBLOCK_READ
 	fprintf(stderr, "Reading %d bytes of globalStrings, currently at position 0x%X\n", size, (unsigned int)st.tellg());
+#endif
 	if (size)
 	{
 		globalStrings = new char[size];
@@ -138,7 +140,9 @@ bool CodeBlock::read(Stream &st)
 	globalSize = size;
 
 	size = stream_readi(st);
+#ifdef VERBOSE_CODEBLOCK_READ
 	fprintf(stderr, "Reading %d bytes of globalFloats, currently at position 0x%X\n", size, (unsigned int)st.tellg());
+#endif
 	if (size)
 	{
 		globalFloats = new F64[size];
@@ -147,7 +151,9 @@ bool CodeBlock::read(Stream &st)
 	}
 
 	size = stream_readi(st);
+#ifdef VERBOSE_CODEBLOCK_READ
 	fprintf(stderr, "Reading %d bytes of functionStrings, currently at position 0x%X\n", size, (unsigned int)st.tellg());
+#endif
 	if (size)
 	{
 		functionStrings = new char[size];
@@ -156,7 +162,9 @@ bool CodeBlock::read(Stream &st)
 	}
 
 	size = stream_readi(st);
+#ifdef VERBOSE_CODEBLOCK_READ
 	fprintf(stderr, "Reading %d bytes of functionFloats, currently at position 0x%X\n", size, (unsigned int)st.tellg());
+#endif
 	if (size)
 	{
 		functionFloats = new F64[size];
@@ -169,9 +177,13 @@ bool CodeBlock::read(Stream &st)
 	codeSize = codeLength;
 	lineBreakPairCount = stream_readi(st);
 
+#ifdef VERBOSE_CODEBLOCK_READ
 	fprintf(stderr, "Currently at position 0x%X\n", (unsigned int)st.tellg());
+#endif
 	U32 totSize = codeLength + lineBreakPairCount * 2;
+#ifdef VERBOSE_CODEBLOCK_READ
 	fprintf(stderr, "Code length: %d  Line Break count: %d  totSize: %d\n", codeLength, lineBreakPairCount, totSize);
+#endif
 
 	code = new U32[totSize];
 
@@ -221,7 +233,9 @@ bool CodeBlock::read(Stream &st)
 		}
 	}
 
+#ifdef VERBOSE_CODEBLOCK_READ
 	fprintf(stderr, "Finished reading, currently at position 0x%X\n", (unsigned int)st.tellg());
+#endif
 	int c = st.peek();
 	assert(c == EOF && st.eof());
 
@@ -392,6 +406,15 @@ void CodeBlock::dumpStrings(char * stringBuffer) {
 	assert(prev_start == p);
 }
 
+
+void CodeBlock::dumpAllStrings() {
+	assert(m_loaded);
+
+	cerr << "Dumping strings..." << endl;
+	dumpStrings(globalStrings);
+	dumpStrings(functionStrings);
+}
+
 //-----------------------------------------------------------------------------
 // Dumps code in hex format
 //
@@ -433,9 +456,7 @@ void CodeBlock::dumpCode(bool strings) {
 	putc('\n', stdout);
 
 	if (strings) {
-		cerr << "Dumping strings..." << endl;
-		dumpStrings(globalStrings);
-		dumpStrings(functionStrings);
+		dumpAllStrings();
 	}
 }
 

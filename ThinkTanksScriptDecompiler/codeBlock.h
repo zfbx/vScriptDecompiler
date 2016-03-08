@@ -36,6 +36,9 @@
 #include "platform/platform.h"
 #include "compiler.h"
 
+// Verbose CodeBlock::read
+//#define VERBOSE_CODEBLOCK_READ
+
 /// Core TorqueScript code management class.
 ///
 /// This class represents a block of code
@@ -82,6 +85,7 @@ public:
 	void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn);
 	void CodeBlock::dumpCode(bool strings = true);
 	void CodeBlock::dumpStrings(char * stringBuffer);
+	void CodeBlock::dumpAllStrings();
 	void CodeBlock::printInstructionHex(U32 ip, U32 size);
 };
 
