@@ -735,7 +735,7 @@ public:
 	}
 
 	/// Check for end of frame and close out block
-	void CheckFrameEnd(U32 ip)
+	bool CheckFrameEnd(U32 ip)
 	{
 		U32 maxExpr = 0;
 		bool changed = false;
@@ -816,6 +816,7 @@ public:
 
 			SetGlobalTable();
 		}
+		return changed;
 	}
 
 	
@@ -1864,6 +1865,7 @@ public:
 			case OP_STR_TO_NONE:
 			case OP_FLT_TO_NONE:
 			case OP_UINT_TO_NONE:
+			{
 				CheckFrameWrite();
 				CheckPackageScope();
 
@@ -1871,16 +1873,18 @@ public:
 				(*curWriter).endLine();
 				popExpr();
 
-				/*Frame &curFrame = GetCurrentFrame();
+				Frame &curFrame = GetCurrentFrame();
 				if (curFrame.type == Frame::OBJECT) {
 					CheckFrameEnd(ip);
-				}*/
-				CheckFrameEnd(ip);
+					bool changed = CheckFrameEnd(ip);
 
-				writeCurrentExpr(*curWriter);
-				(*curWriter).endLine();
-				popExpr();
-				break;
+					if (changed) {
+						writeCurrentExpr(*curWriter);
+						(*curWriter).endLine();
+						popExpr();
+					}
+				}
+			}	break;
 
 			case OP_SETCURVAR_ARRAY:
 			case OP_SETCURVAR_ARRAY_CREATE:
