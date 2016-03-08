@@ -82,6 +82,7 @@ public:
 	void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn);
 	void CodeBlock::dumpCode(bool strings = true);
 	void CodeBlock::dumpStrings(char * stringBuffer);
+	void CodeBlock::printInstructionHex(U32 ip, U32 size);
 };
 
 #endif

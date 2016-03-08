@@ -101,7 +101,8 @@ struct Expression
 		UINTLITERAL,
 		STRINGLITERAL,
 		STRINGALLOC,
-		SPECIALOP
+		SPECIALOP,
+		FRAMEALLOC
 	};
 	ExpressionType type;
 	union
@@ -150,6 +151,8 @@ struct Expression
 		floatVal = val;
 	}
 	void set(StringTableEntry val, bool copy = false){
+		//Note: val might be NULL when doing OP_SETCUROBJECT_NEW
+		//cout << "set(STE '" << val << "', " << copy << ");" << endl;
 		reset();
 		if (copy && val && val[0]) {
 			type = STRINGALLOC;
@@ -162,8 +165,17 @@ struct Expression
 		}
 	}
 	StringTableEntry set(String val, bool copy = false) {
+		//cout << "set('" << val << "', " << copy << ");" << endl;
 		reset();
 		type = STRINGALLOC;
+		memory = malloc(val.length() + 1);
+		strVal = strcpy((char*)memory, val.c_str());
+		return strVal;
+	}
+	StringTableEntry setFrame(String val) {
+		//cout << "set('" << val << "', " << copy << ");" << endl;
+		reset();
+		type = FRAMEALLOC;
 		memory = malloc(val.length() + 1);
 		strVal = strcpy((char*)memory, val.c_str());
 		return strVal;
@@ -553,15 +565,15 @@ public:
 		}
 	}
 
-CodeWriter& needLine() {
-	needReturn = true;
-	return *this;
-}
+	CodeWriter& needLine() {
+		needReturn = true;
+		return *this;
+	}
 
-CodeWriter& endLine() {
-	needEnd = true;
-	return *this;
-}
+	CodeWriter& endLine() {
+		needEnd = true;
+		return *this;
+	}
 
 };
 
@@ -752,20 +764,30 @@ public:
 
 			if (checkFrameWrite)
 				CheckFrameWrite(_FRAME);
+
+			U32 frameType = curFrame.type;
 			if (PopFrame())
 			{
 				CodeWriter &writer = (*this->curWriter);
 				writer.endBlock();
-				ASSERT2(_EXPR > maxExpr, "Unprocessed expressions: %d at %d\n", _EXPR, ip);
+				ASSERT2(_EXPR > maxExpr, "Unprocessed expressions: %d at 0x%08X\n", _EXPR, ip);
 				if (_EXPR > maxExpr)
 					writer.format("/* %d | %d */", _EXPR, ip);
 				writer.needLine();
+
+				if (frameType == Frame::OBJECT) {
+					maxExpr = 1;
+
+					pushExpr().setFrame(writer.end());
+					writer.reset();
+					this->curWriter = &writerArray[--_WRITER];
+				}
 			}
 			changed = true;
 		}
 		if (changed)
 		{
-			ASSERT2(_EXPR > maxExpr, "Unprocessed expressions: %d at %d\n", _EXPR, ip);
+			ASSERT2(_EXPR > maxExpr, "Unprocessed expressions: %d at 0x%08X\n", _EXPR, ip);
 			if (_EXPR > maxExpr)
 			{
 				for (U32 idx = maxExpr; idx < _EXPR; ++idx)
@@ -775,7 +797,7 @@ public:
 		}
 		if (changed && _FRAME == 0)
 		{
-			ASSERT2(_EXPR != 0, "Unprocessed expressions: %d at %d\n", _EXPR, ip);
+			ASSERT2(_EXPR != 0, "Unprocessed expressions: %d at 0x%08X\n", _EXPR, ip);
 			SetGlobalTable();
 		}
 	}
@@ -1017,12 +1039,16 @@ public:
 		Expression &expr = exprStack[idx];
 		switch (expr.type)
 		{
+		default:
+			cerr << "Warning: hit default expr.type" << endl;
+			break;
 		case Expression::NONE: break;
 
 		case Expression::FLOATLITERAL: writer.format("%g", expr.floatVal); break;
 		case Expression::UINTLITERAL: writer.format("%u", expr.intVal); break;
 		case Expression::STRINGLITERAL:
 		case Expression::STRINGALLOC:
+		case Expression::FRAMEALLOC:
 			if (expr.strVal) writer.append(expr.strVal);
 			break;
 
@@ -1458,6 +1484,7 @@ public:
 			case OP_LOADVAR_UINT:
 			case OP_LOADVAR_FLT:
 			case OP_LOADVAR_STR:
+			//case OP_LOADVAR_VAR:
 				if (curVar){
 					pushExpr().set(curVar);
 				}
@@ -1471,8 +1498,7 @@ public:
 				//literalStr.append('\'').append(String(str).expandEscapes()).append('\'');
 				literalStr.append('\'').append(expandEscapes(String(str))).append('\'');
 
-				curVar = literalStr.end().c_str();
-				pushExpr().set(curVar);				
+				curVar = pushExpr().set(literalStr.end());
 			}	break;
 
 			case OP_LOADIMMED_STR:
@@ -1508,6 +1534,7 @@ public:
 			case OP_SAVEVAR_FLT:
 			case OP_SAVEVAR_UINT: 
 			case OP_SAVEVAR_STR:
+			//case OP_SAVEVAR_VAR:
 				pushExpr().set(curVar);
 				pushExpr().setOp(instruction);
 				break;
@@ -1553,7 +1580,7 @@ public:
 				_CALLARGS = argsPos;
 				writer.append(")");
 
-				pushExpr().set(writer.end().c_str(), true);
+				pushExpr().set(writer.end(), true);
 			} break;
 
 
@@ -1794,12 +1821,12 @@ public:
 			{
 				if (curExpr().type == Expression::STRINGOP)
 				{
-					switch (curExpr().op.val)
+					/*switch (curExpr().op.val)
 					{
 					case OP_ADVANCE_STR:
 						exprStack[_EXPR--].reset(); // remove the "advance_str" op?
 						break;
-					}
+					}*/
 				}
 			} break;
 			case OP_ADVANCE_STR_APPENDCHAR:
@@ -1820,6 +1847,7 @@ public:
 			case OP_UINT_TO_NONE:
 				CheckFrameWrite();
 				CheckPackageScope();
+				CheckFrameEnd(ip);
 				writeCurrentExpr(*curWriter);
 				(*curWriter).endLine();
 				popExpr();
@@ -1838,6 +1866,7 @@ public:
 				writeExpr(literalStr, arg1); // TODO: need to convert string to integer if quoted string
 				literalStr.append("]");
 				popExpr();
+
 				curVar = literalStr.end().c_str();
 			} break;
 
@@ -1848,10 +1877,7 @@ public:
 				// Read some useful info.
 				StringTableEntry objParent = block.CodeToSTE(code, ip);
 				bool isDataBlock = code[ip + 1];
-				bool isInternal = code[ip + 2];
-				bool isSingleton = code[ip + 3];
-				U32  lineNumber = code[ip + 4];
-				U32  failJump = code[ip + 5];
+				U32 failJump = code[ip + 2];
 
 
 				this->curWriter = &writerArray[++_WRITER];
@@ -1863,8 +1889,6 @@ public:
 
 				if (isDataBlock)
 					defWriter.append("datablock ");
-				else if (isSingleton)
-					defWriter.append("singleton ");
 				else
 					defWriter.append("new ");
 				
@@ -1901,7 +1925,7 @@ public:
 					defWriter.appendline().startBlock();
 					PushFrameEnd(Frame::OBJECT,ip,failJump+1);
 				}
-				ip += 6;
+				ip += 3;
 				break;
 			}
 			case OP_ADD_OBJECT:
@@ -1913,12 +1937,12 @@ public:
 				bool placeAtRoot = code[ip++];
 				GetCurrentFrame().placeAtRoot = placeAtRoot;
 
-			} break;
+			/*} break;
 
 			/*case OP_FINISH_OBJECT: 
-			{
-				Frame& curFrame = GetCurrentFrame();
-				bool placeAtRoot = curFrame.placeAtRoot;
+			{*
+				/*Frame& curFrame = GetCurrentFrame();
+				bool placeAtRoot = curFrame.placeAtRoot;*/
 
 				CheckFrameWrite();
 				CheckPackageScope();
@@ -1927,23 +1951,23 @@ public:
 				// writeCurrentExpr(objWriter); // why do I need this ????
 				//objWriter.endLine();
 				popExpr();
-				this->curWriter = &writerArray[--_WRITER];
-				if (placeAtRoot) {
-					pushExpr().set(objWriter.end(), true);
+				//this->curWriter = &writerArray[--_WRITER];
+				/*if (placeAtRoot) {
+					curVar = pushExpr().set(objWriter.end(), true);
 				} else {
-					this->curWriter->append(objWriter.end()).endLine().needLine();
-				}
-				objWriter.reset();
+					//this->curWriter->append(objWriter.end()).endLine().needLine();
+				}*/
+				//objWriter.reset();
 				//PopFrame();
-			} break;*/
+			} break;
 
-			/*case OP_SETCUROBJECT:
+			case OP_SETCUROBJECT:
 				break;
 			case OP_SETCUROBJECT_NEW:
 				curObject = NULL;
 				pushExpr().set(curObject);
 				break;
-			case OP_SETCUROBJECT_INTERNAL:
+			/*case OP_SETCUROBJECT_INTERNAL:
 			{	
 				int recurse = code[ip++];
 				pushExpr().setOp(instruction);

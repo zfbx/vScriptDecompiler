@@ -19,8 +19,8 @@ int main()
 
 	CodeBlock cb;
 
-	std::string fileName = "tank.cs.dso";
-	std::string fileName_out = "tank.cs";
+	std::string fileName = "tests/objdecl_inside_function.cs.dso";
+	std::string fileName_out = "tests/objdecl_inside_function.cs";
 	cb.read(fileName);
 
 	cb.dumpCode();

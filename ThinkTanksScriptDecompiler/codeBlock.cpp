@@ -234,7 +234,7 @@ bool CodeBlock::read(Stream &st)
 }
 
 //-----------------------------------------------------------------------------
-// Borrowed directly from T3D source without any changes
+// Borrowed directly from T3D source without almost any changes
 // Post-processes the loaded code
 //-----------------------------------------------------------------------------
 void CodeBlock::calcBreakList()
@@ -307,7 +307,7 @@ inline StringTableEntry CodeBlock::CodeToSTE(U32 *code, U32 ip)
 		return res;
 	}
 
-	abort();
+	return NULL; // Probably unused
 }
 
 //-----------------------------------------------------------------------------
@@ -440,6 +440,39 @@ void CodeBlock::dumpCode(bool strings) {
 }
 
 //-----------------------------------------------------------------------------
+// Used to print a single instruction's hex before the disassembled opcode
+//-----------------------------------------------------------------------------
+void CodeBlock::printInstructionHex(U32 ip, U32 size) {
+	U32 delta_ip = 0;
+
+	if (ip + size >= codeSize) {
+		size = codeSize - ip;
+	}
+
+	while (delta_ip < size)
+	{
+		U32 curCode = code[ip+delta_ip];
+
+		if (delta_ip > 0) {
+			putc(' ', stdout);
+		}
+
+		char *stringInfo = NULL;
+		stringInfo = findStringInfoFromPointer((char*)curCode);
+
+		if (stringInfo != NULL) {
+			printf("%8s", stringInfo);
+		}
+		else {
+			printf("%08X", curCode);
+		}
+
+		delta_ip++;
+	}
+	printf(" : ");
+}
+
+//-----------------------------------------------------------------------------
 // Disassembles instructions, and dumps them to stdout
 // Based on a T3D function of the same name, heavily modified
 //-----------------------------------------------------------------------------
@@ -476,12 +509,16 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 
 		case OP_FUNC_DECL:
 		{
+			U32 argc = code[ip + 5];
+
+			U32 size = 7 + argc;
+			printInstructionHex(ip-1, size);
+
 			StringTableEntry fnName = CodeToSTE(code, ip);
 			StringTableEntry fnNamespace = CodeToSTE(code, ip + 1);
 			StringTableEntry fnPackage = CodeToSTE(code, ip + 2);
 			bool hasBody = bool(code[ip + 3]);
 			U32 newIp = code[ip + 4];
-			U32 argc = code[ip + 5];
 			endFuncIp = newIp;
 
 			printf("OP_FUNC_DECL name=%s nspace=%s package=%s hasbody=%i newip=0x%08X argc=%i\n",
@@ -494,6 +531,9 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 					U32 idx = ip + 6 + i;
 					StringTableEntry varName = CodeToSTE(code, idx);
 
+					if (varName == NULL)
+						varName = "unused";
+
 					printf(" \"%s\"", varName);
 				}
 				putc('\n', stdout);
@@ -501,13 +541,15 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 
 			// Skip args.
 
-			ip += 6 + argc;
+			ip += size-1;
 			smInFunction = true;
 			break;
 		}
 
 		case OP_CREATE_OBJECT:
 		{
+			U32 size = 4;
+			printInstructionHex(ip - 1, size);
 
 			StringTableEntry objParent = CodeToSTE(code, ip);
 			bool isDataBlock = code[ip + 1];
@@ -516,12 +558,15 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 			printf("OP_CREATE_OBJECT objParent=%s isDataBlock=%i failJump=0x%08X\n",
 				objParent, isDataBlock, failJump);
 
-			ip += 3;
+			ip += size-1;
 			break;
 		}
 
 		case OP_ADD_OBJECT:
 		{
+			U32 size = 2;
+			printInstructionHex(ip - 1, size);
+
 			bool placeAtRoot = code[ip++];
 			printf("OP_ADD_OBJECT placeAtRoot=%i\n", placeAtRoot);
 			break;
@@ -529,6 +574,9 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 
 		case OP_END_OBJECT:
 		{
+			U32 size = 2;
+			printInstructionHex(ip - 1, size);
+
 			bool placeAtRoot = code[ip++];
 			printf("OP_END_OBJECT placeAtRoot=%i\n", placeAtRoot);
 			break;
@@ -542,6 +590,9 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 
 		case OP_JMPIFFNOT:
 		{
+			U32 size = 2;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_JMPIFFNOT ip=0x%08X\n", code[ip]);
 			++ip;
 			break;
@@ -549,6 +600,9 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 
 		case OP_JMPIFNOT:
 		{
+			U32 size = 2;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_JMPIFNOT ip=0x%08X\n", code[ip]);
 			++ip;
 			break;
@@ -556,6 +610,9 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 
 		case OP_JMPIFF:
 		{
+			U32 size = 2;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_JMPIFF ip=0x%08X\n", code[ip]);
 			++ip;
 			break;
@@ -563,6 +620,9 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 
 		case OP_JMPIF:
 		{
+			U32 size = 2;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_JMPIF ip=0x%08X\n", code[ip]);
 			++ip;
 			break;
@@ -570,6 +630,9 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 
 		case OP_JMPIFNOT_NP:
 		{
+			U32 size = 2;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_JMPIFNOT_NP ip=0x%08X\n", code[ip]);
 			++ip;
 			break;
@@ -577,6 +640,9 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 
 		case OP_JMPIF_NP:
 		{
+			U32 size = 2;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_JMPIF_NP ip=0x%08X\n", code[ip]);
 			++ip;
 			break;
@@ -584,6 +650,9 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 
 		case OP_JMP:
 		{
+			U32 size = 2;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_JMP ip=0x%08X\n", code[ip]);
 			++ip;
 			break;
@@ -591,6 +660,9 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 
 		case OP_RETURN:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_RETURN\n");
 
 			if (upToReturn)
@@ -631,138 +703,207 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 
 		case OP_CMPEQ:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_CMPEQ\n");
 			break;
 		}
 
 		case OP_CMPGR:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_CMPGR\n");
 			break;
 		}
 
 		case OP_CMPGE:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_CMPGE\n");
 			break;
 		}
 
 		case OP_CMPLT:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_CMPLT\n");
 			break;
 		}
 
 		case OP_CMPLE:
 		{
+			U32 size = 2;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_CMPLE\n");
 			break;
 		}
 
 		case OP_CMPNE:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_CMPNE\n");
 			break;
 		}
 
 		case OP_XOR:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_XOR\n");
 			break;
 		}
 
 		case OP_MOD:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_MOD\n");
 			break;
 		}
 
 		case OP_BITAND:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_BITAND\n");
 			break;
 		}
 
 		case OP_BITOR:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_BITOR\n");
 			break;
 		}
 
 		case OP_NOT:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_NOT\n");
 			break;
 		}
 
 		case OP_NOTF:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_NOTF\n");
 			break;
 		}
 
 		case OP_ONESCOMPLEMENT:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_ONESCOMPLEMENT\n");
 			break;
 		}
 
 		case OP_SHR:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_SHR\n");
 			break;
 		}
 
 		case OP_SHL:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_SHL\n");
 			break;
 		}
 
 		case OP_AND:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_AND\n");
 			break;
 		}
 
 		case OP_OR:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_OR\n");
 			break;
 		}
 
 		case OP_ADD:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_ADD\n");
 			break;
 		}
 
 		case OP_SUB:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_SUB\n");
 			break;
 		}
 
 		case OP_MUL:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_MUL\n");
 			break;
 		}
 
 		case OP_DIV:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_DIV\n");
 			break;
 		}
 
 		case OP_NEG:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_NEG\n");
 			break;
 		}
 
 		case OP_SETCURVAR:
 		{
+			U32 size = 2;
+			printInstructionHex(ip - 1, size);
+
 			StringTableEntry var = CodeToSTE(code, ip);
 
 			printf("OP_SETCURVAR var=%s\n", var);
@@ -772,6 +913,9 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 
 		case OP_SETCURVAR_CREATE:
 		{
+			U32 size = 2;
+			printInstructionHex(ip - 1, size);
+
 			StringTableEntry var = CodeToSTE(code, ip);
 
 			printf("OP_SETCURVAR_CREATE var=%s\n", var);
@@ -781,37 +925,46 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 
 		case OP_SETCURVAR_ARRAY:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_SETCURVAR_ARRAY\n");
 			break;
 		}
 
 		case OP_SETCURVAR_ARRAY_CREATE:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_SETCURVAR_ARRAY_CREATE\n");
 			break;
 		}
 
 		case OP_LOADVAR_UINT:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_LOADVAR_UINT\n");
 			break;
 		}
 
 		case OP_LOADVAR_FLT:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_LOADVAR_FLT\n");
 			break;
 		}
 
 		case OP_LOADVAR_STR:
 		{
-			printf("OP_LOADVAR_STR\n");
-			break;
-		}
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
 
-		case OP_LOADVAR_VAR:
-		{
-			printf("OP_LOADVAR_VAR\n");
+			printf("OP_LOADVAR_STR\n");
 			break;
 		}
 
@@ -823,19 +976,37 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 
 		case OP_SAVEVAR_FLT:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_SAVEVAR_FLT\n");
 			break;
 		}
 
 		case OP_SAVEVAR_STR:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_SAVEVAR_STR\n");
 			break;
 		}
 
-		case OP_SAVEVAR_VAR:
+		case OP_SETCUROBJECT:
 		{
-			printf("OP_SAVEVAR_VAR\n");
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
+			printf("OP_SETCUROBJECT\n");
+			break;
+		}
+
+		case OP_SETCUROBJECT_NEW:
+		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
+			printf("OP_SETCUROBJECT_NEW\n");
 			break;
 		}
 
@@ -860,9 +1031,12 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 
 		case OP_SETCURFIELD:
 		{
+			U32 size = 2;
+			printInstructionHex(ip - 1, size);
+
 			StringTableEntry curField = CodeToSTE(code, ip);
 			printf("OP_SETCURFIELD field=%s\n", curField);
-			ip += 1;
+			ip += size-1;
 			break;
 		}
 
@@ -882,90 +1056,135 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 
 		case OP_LOADFIELD_UINT:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_LOADFIELD_UINT\n");
 			break;
 		}
 
 		case OP_LOADFIELD_FLT:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_LOADFIELD_FLT\n");
 			break;
 		}
 
 		case OP_LOADFIELD_STR:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_LOADFIELD_STR\n");
 			break;
 		}
 
 		case OP_SAVEFIELD_UINT:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_SAVEFIELD_UINT\n");
 			break;
 		}
 
 		case OP_SAVEFIELD_FLT:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_SAVEFIELD_FLT\n");
 			break;
 		}
 
 		case OP_SAVEFIELD_STR:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_SAVEFIELD_STR\n");
 			break;
 		}
 
 		case OP_STR_TO_UINT:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_STR_TO_UINT\n");
 			break;
 		}
 
 		case OP_STR_TO_FLT:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_STR_TO_FLT\n");
 			break;
 		}
 
 		case OP_STR_TO_NONE:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_STR_TO_NONE\n");
 			break;
 		}
 
 		case OP_FLT_TO_UINT:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_FLT_TO_UINT\n");
 			break;
 		}
 
 		case OP_FLT_TO_STR:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_FLT_TO_STR\n");
 			break;
 		}
 
 		case OP_FLT_TO_NONE:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_FLT_TO_NONE\n");
 			break;
 		}
 
 		case OP_UINT_TO_FLT:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_SAVEFIELD_STR\n");
 			break;
 		}
 
 		case OP_UINT_TO_STR:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_UINT_TO_STR\n");
 			break;
 		}
 
 		case OP_UINT_TO_NONE:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_UINT_TO_NONE\n");
 			break;
 		}
@@ -978,6 +1197,9 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 
 		case OP_LOADIMMED_UINT:
 		{
+			U32 size = 2;
+			printInstructionHex(ip - 1, size);
+
 			U32 val = code[ip];
 			printf("OP_LOADIMMED_UINT val=%i\n", val);
 			++ip;
@@ -986,6 +1208,9 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 
 		case OP_LOADIMMED_FLT:
 		{
+			U32 size = 2;
+			printInstructionHex(ip - 1, size);
+
 			F64 val = (smInFunction ? functionFloats : globalFloats)[code[ip]];
 			printf("OP_LOADIMMED_FLT val=%f\n", val);
 			++ip;
@@ -994,6 +1219,9 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 
 		case OP_TAG_TO_STR:
 		{
+			U32 size = 2;
+			printInstructionHex(ip - 1, size);
+
 			const char* str = (smInFunction ? functionStrings : globalStrings) + code[ip];
 			printf("OP_TAG_TO_STR str=%s\n", str);
 			++ip;
@@ -1002,6 +1230,9 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 
 		case OP_LOADIMMED_STR:
 		{
+			U32 size = 2;
+			printInstructionHex(ip - 1, size);
+
 			const char* str = (smInFunction ? functionStrings : globalStrings) + code[ip];
 			printf("OP_LOADIMMED_STR str=%s\n", str);
 			++ip;
@@ -1018,14 +1249,20 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 
 		case OP_LOADIMMED_IDENT:
 		{
+			U32 size = 3;
+			printInstructionHex(ip - 1, size);
+
 			StringTableEntry str = CodeToSTE(code, ip);
 			printf("OP_LOADIMMED_IDENT str=%s\n", str);
-			ip += 2;
+			ip += size-1;
 			break;
 		}
 
 		case OP_CALLFUNC_RESOLVE:
 		{
+			U32 size = 4;
+			printInstructionHex(ip - 1, size);
+
 			StringTableEntry fnNamespace = CodeToSTE(code, ip + 1);
 			StringTableEntry fnName = CodeToSTE(code, ip);
 			U32 callType = code[ip + 2];
@@ -1034,12 +1271,15 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 				callType == callTypes::FunctionCall ? "FunctionCall"
 				: callType == callTypes::MethodCall ? "MethodCall" : "ParentCall");
 
-			ip += 3;
+			ip += size-1;
 			break;
 		}
 
 		case OP_CALLFUNC:
 		{
+			U32 size = 4;
+			printInstructionHex(ip - 1, size);
+
 			StringTableEntry fnNamespace = CodeToSTE(code, ip + 1);
 			StringTableEntry fnName = CodeToSTE(code, ip);
 			U32 callType = code[ip + 2];
@@ -1048,18 +1288,24 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 				callType == callTypes::FunctionCall ? "FunctionCall"
 				: callType == callTypes::MethodCall ? "MethodCall" : "ParentCall");
 
-			ip += 3;
+			ip += size-1;
 			break;
 		}
 
 		case OP_ADVANCE_STR:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_ADVANCE_STR\n");
 			break;
 		}
 
 		case OP_ADVANCE_STR_APPENDCHAR:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			char ch = code[ip];
 			printf("OP_ADVANCE_STR_APPENDCHAR char=%c\n", ch);
 			++ip;
@@ -1068,36 +1314,54 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 
 		case OP_ADVANCE_STR_COMMA:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_ADVANCE_STR_COMMA\n");
 			break;
 		}
 
 		case OP_ADVANCE_STR_NUL:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_ADVANCE_STR_NUL\n");
 			break;
 		}
 
 		case OP_REWIND_STR:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_REWIND_STR\n");
 			break;
 		}
 
 		case OP_TERMINATE_REWIND_STR:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_TERMINATE_REWIND_STR\n");
 			break;
 		}
 
 		case OP_COMPARE_STR:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_COMPARE_STR\n");
 			break;
 		}
 
 		case OP_PUSH:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_PUSH\n");
 			break;
 		}
@@ -1122,6 +1386,9 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 
 		case OP_PUSH_FRAME:
 		{
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			printf("OP_PUSH_FRAME\n");
 			break;
 		}
@@ -1179,6 +1446,9 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 		}*/
 
 		default:
+			U32 size = 1;
+			printInstructionHex(ip - 1, size);
+
 			invalidCount++;
 			printf("!!INVALID!! (curInstruction = %d)\n", curInstruction);
 			break;
