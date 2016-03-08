@@ -1426,7 +1426,7 @@ public:
 				StringTableEntry fnName = block.CodeToSTE(code, ip);
 				StringTableEntry fnNamespace = block.CodeToSTE(code, ip+1);
 				StringTableEntry fnPackage = block.CodeToSTE(code, ip + 2);
-				bool hasBody = bool(code[ip + 3]);
+				bool hasBody = true;//bool(code[ip + 3]); // Force hasBody to true, since ThinkTanks seems to always add a OP_RETURN after the OP_FUNC_DECL, even if hasBody is set to 0
 				U32 newIp = code[ip + 4];
 				U32 argc = code[ip + 5];
 
