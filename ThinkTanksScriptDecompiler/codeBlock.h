@@ -27,6 +27,8 @@
 // Many functions written from scratch, or modified.
 // Almost all dependencies on T3D were removed, and is now compatible with
 // ThinkTanks' DSO format
+//
+// jamesu 2019 - added changes to optionally work with onverse scripts.
 //-----------------------------------------------------------------------------
 
 #ifndef _CODEBLOCK_H_
@@ -36,7 +38,7 @@
 #include "platform/platform.h"
 #include "compiler.h"
 
-// Verbose CodeBlock::read
+// Verbose read
 //#define VERBOSE_CODEBLOCK_READ
 
 /// Core TorqueScript code management class.
@@ -46,12 +48,16 @@ class CodeBlock
 {
 private:
 	void calcBreakList();
-	char* CodeBlock::findStringInfoFromPointer(char * ptr);
+	char* findStringInfoFromPointer(char * ptr);
 public:
 	CodeBlock();
 	~CodeBlock();
 
-	bool m_loaded = false;
+	static void decodeOnverseStrings(char* data, S32 len);
+	static U32 convertOnverseOpcode(U32 op);
+
+	bool m_loaded;
+	bool m_onverse;
 
 	StringTableEntry name;
 	StringTableEntry fullPath;
@@ -59,6 +65,7 @@ public:
 
 	char *globalStrings;
 	char *functionStrings;
+	char *combinedStrings;
 
 	U32 functionStringsMaxLen;
 	U32 globalStringsMaxLen;
@@ -79,14 +86,16 @@ public:
 
 	///
 	bool read(String &fileName);
+	bool readOnverse(String &fileName);
 	bool read(Stream &st);
+	bool readOnverse(Stream &st);
 
-	inline StringTableEntry CodeBlock::CodeToSTE(U32 *code, U32 ip);
-	void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn);
-	void CodeBlock::dumpCode(bool strings = true);
-	void CodeBlock::dumpStrings(char * stringBuffer);
-	void CodeBlock::dumpAllStrings();
-	void CodeBlock::printInstructionHex(U32 ip, U32 size);
+	inline StringTableEntry CodeToSTE(U32 *code, U32 ip);
+	void dumpInstructions(U32 startIp, U32 number, bool upToReturn);
+	void dumpCode(bool strings = true);
+	void dumpStrings(char * stringBuffer);
+	void dumpAllStrings();
+	void printInstructionHex(U32 ip, U32 size);
 };
 
 #endif

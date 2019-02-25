@@ -5,6 +5,8 @@
 // Many functions written from scratch, or modified.
 // Almost all dependencies on T3D were removed, and is now compatible with
 // ThinkTanks' DSO format
+//
+// jamesu 2019 - added changes to optionally work with onverse scripts.
 //-----------------------------------------------------------------------------
 
 #include <stdio.h>
@@ -24,6 +26,7 @@ void usage(int argc, char *argv[]) {
 	cerr << "\t--disassemble : Dump disassembled instructions\n";
 	cerr << "\t--decompile : Decompile script\n";
 	cerr << "\t--wait : Wait for key press after conclusion\n";
+	cerr << "\t--onverse : Assume input script is an onverse script\n";
 	cerr << "All commands output to stdout. To write to a file, redirect it to a file, i.e.\n";
 	cerr << argv[0] << " <DSO filename> [options] > [output_filename]\n";
 }
@@ -43,6 +46,7 @@ int main(int argc, char *argv[])
 	bool disassemble = false;
 	bool decompile = false;
 	bool wait = false;
+	bool onverse = false;
 
 	for (int i = 2; i < argc; i++) {
 		char *curArg = argv[i];
@@ -57,6 +61,8 @@ int main(int argc, char *argv[])
 			decompile = true;
 		else if (strcmp(curArg, "--wait") == 0)
 			wait = true;
+		else if (strcmp(curArg, "--onverse") == 0)
+			onverse = true;
 		else {
 			cerr << "Invalid argument " << curArg << endl;
 			usage(argc, argv);
@@ -69,8 +75,19 @@ int main(int argc, char *argv[])
 
 	CodeBlock cb;
 
-	if (!cb.read(fileName)) {
-		exit(EXIT_FAILURE);
+	cb.m_onverse = onverse;
+
+	if (onverse)
+	{
+		if (!cb.readOnverse(fileName)) {
+			exit(EXIT_FAILURE);
+		}
+	}
+	else
+	{
+		if (!cb.read(fileName)) {
+			exit(EXIT_FAILURE);
+		}
 	}
 	
 	if (hexdump)

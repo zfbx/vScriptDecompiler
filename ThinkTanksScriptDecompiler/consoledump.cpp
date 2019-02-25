@@ -29,6 +29,8 @@
 // Many functions written from scratch, or modified.
 // Almost all dependencies on T3D were removed, and is now compatible with
 // ThinkTanks' DSO format
+//
+// jamesu 2019 - added changes to optionally work with onverse scripts.
 //-----------------------------------------------------------------------------
 
 #include <iostream>
@@ -71,9 +73,9 @@ F64 consoleStringToNumber(const char *str, StringTableEntry file, U32 line)
 	F64 val = atof(str);
 	if (val != 0)
 		return val;
-	else if (!_stricmp(str, "true"))
+	else if (!strcasecmp(str, "true"))
 		return 1;
-	else if (!_stricmp(str, "false"))
+	else if (!strcasecmp(str, "false"))
 		return 0;
 	else if (file)
 	{
@@ -490,24 +492,17 @@ public:
 	}
 	CodeWriter& format(const char* fmt, ...)
 	{
-		char *ret = NULL;
+		char ret[4096];
 
 		ensureIndent();
 		va_list args;
 		va_start(args, fmt);
 
-		int size = _vscprintf(fmt, args);
-
-		if (size > 0) {
-			size++; //for null
-			ret = (char*)malloc(size + 2);
-			if (ret) _vsnprintf_s(ret, size, size, fmt, args);
-		}
+		vsnprintf(ret, 4096, fmt, args);
 
 		va_end(args);
 
 		mFormat.append(ret);
-		free(ret);
 
 		return *this;
 	}
@@ -608,10 +603,11 @@ class Decompiler
 	CodeWriter *curWriter;
 	U32 _WRITER = 0;
 	U32 curInstructionPointer = 0;
+	bool m_onverse;
 
 public:
 
-	Decompiler(CodeBlock & cb) : block(cb) {}
+	Decompiler(CodeBlock & cb) : block(cb), m_onverse(cb.m_onverse) {}
 
 	void reset() {
 		curInstructionPointer = 0;
@@ -1417,6 +1413,11 @@ public:
 			; ip < codeSize
 			; instruction = (Compiler::CompiledInstructions)code[curInstructionPointer = ip++])
 		{
+			if (m_onverse)
+			{
+				instruction = (Compiler::CompiledInstructions)CodeBlock::convertOnverseOpcode((U32)instruction);
+			}
+
 			switch (instruction) {
 			default:
 				ASSERT1(1, "Unhandled instruction: %d\n", instruction);

@@ -5,6 +5,8 @@
 // Many functions written from scratch, or modified.
 // Almost all dependencies on T3D were removed, and is now compatible with
 // ThinkTanks' DSO format
+//
+// jamesu 2019 - added changes to optionally work with onverse scripts.
 //-----------------------------------------------------------------------------
 
 #ifndef _CONSOLEDUMP_H_

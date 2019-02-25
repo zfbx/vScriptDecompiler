@@ -27,6 +27,8 @@
 // Many functions written from scratch, or modified.
 // Almost all dependencies on T3D were removed, and is now compatible with
 // ThinkTanks' DSO format
+//
+// jamesu 2019 - added changes to optionally work with onverse scripts.
 //-----------------------------------------------------------------------------
 
 
@@ -140,7 +142,15 @@ namespace Compiler
 		OP_PUSH = 80,
 		OP_PUSH_FRAME = 81,
 
-		OP_BREAK = 82
+		OP_BREAK = 82,
+
+		OP_INVALID = 1000
+	};
+
+
+	enum OnverseCompiledOpcodes
+	{
+
 	};
 
 	// Call types

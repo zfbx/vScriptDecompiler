@@ -5,3 +5,5 @@ Based on T3D code by GarageGames, and consoleDump.cpp is borrowed from https://g
 
 Many functions were written from scratch, or modified.
 Almost all dependencies on T3D were removed, and it was made compatible with ThinkTanks' DSO format
+
+Also decompiles onverse scripts.
