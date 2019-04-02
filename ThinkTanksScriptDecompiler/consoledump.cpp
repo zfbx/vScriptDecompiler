@@ -66,6 +66,10 @@ S64 intStack[MaxStackSize];
 U32 _FLT = 0;     ///< Stack pointer for floatStack.
 U32 _UINT = 0;    ///< Stack pointer for intStack.
 
+#ifdef _MSC_VER
+#define strcasecmp stricmp
+#endif
+
 //------------------------------------------------------------
 
 F64 consoleStringToNumber(const char *str, StringTableEntry file, U32 line)
@@ -604,10 +608,11 @@ class Decompiler
 	U32 _WRITER = 0;
 	U32 curInstructionPointer = 0;
 	bool m_onverse;
+	bool m_vside;
 
 public:
 
-	Decompiler(CodeBlock & cb) : block(cb), m_onverse(cb.m_onverse) {}
+	Decompiler(CodeBlock & cb) : block(cb), m_onverse(cb.m_onverse), m_vside(cb.m_vside) {}
 
 	void reset() {
 		curInstructionPointer = 0;
@@ -1416,6 +1421,10 @@ public:
 			if (m_onverse)
 			{
 				instruction = (Compiler::CompiledInstructions)CodeBlock::convertOnverseOpcode((U32)instruction);
+			}
+			else if (m_vside)
+			{
+				instruction = (Compiler::CompiledInstructions)CodeBlock::convertVsideOpcode((U32)instruction);
 			}
 
 			switch (instruction) {

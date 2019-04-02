@@ -55,9 +55,11 @@ public:
 
 	static void decodeOnverseStrings(char* data, S32 len);
 	static U32 convertOnverseOpcode(U32 op);
+	static U32 convertVsideOpcode(U32 op);
 
 	bool m_loaded;
 	bool m_onverse;
+	bool m_vside;
 
 	StringTableEntry name;
 	StringTableEntry fullPath;
@@ -87,8 +89,10 @@ public:
 	///
 	bool read(String &fileName);
 	bool readOnverse(String &fileName);
+	bool readVside(String &fileName);
 	bool read(Stream &st);
 	bool readOnverse(Stream &st);
+	bool readVside(Stream &st);
 
 	inline StringTableEntry CodeToSTE(U32 *code, U32 ip);
 	void dumpInstructions(U32 startIp, U32 number, bool upToReturn);

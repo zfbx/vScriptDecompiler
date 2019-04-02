@@ -27,6 +27,7 @@ void usage(int argc, char *argv[]) {
 	cerr << "\t--decompile : Decompile script\n";
 	cerr << "\t--wait : Wait for key press after conclusion\n";
 	cerr << "\t--onverse : Assume input script is an onverse script\n";
+	cerr << "\t--vside : Assume input script is a vside script\n";
 	cerr << "All commands output to stdout. To write to a file, redirect it to a file, i.e.\n";
 	cerr << argv[0] << " <DSO filename> [options] > [output_filename]\n";
 }
@@ -47,6 +48,7 @@ int main(int argc, char *argv[])
 	bool decompile = false;
 	bool wait = false;
 	bool onverse = false;
+	bool vside = false;
 
 	for (int i = 2; i < argc; i++) {
 		char *curArg = argv[i];
@@ -63,6 +65,8 @@ int main(int argc, char *argv[])
 			wait = true;
 		else if (strcmp(curArg, "--onverse") == 0)
 			onverse = true;
+		else if (strcmp(curArg, "--vside") == 0)
+			vside = true;
 		else {
 			cerr << "Invalid argument " << curArg << endl;
 			usage(argc, argv);
@@ -76,10 +80,17 @@ int main(int argc, char *argv[])
 	CodeBlock cb;
 
 	cb.m_onverse = onverse;
+	cb.m_vside = vside;
 
 	if (onverse)
 	{
 		if (!cb.readOnverse(fileName)) {
+			exit(EXIT_FAILURE);
+		}
+	}
+	else if (vside)
+	{
+		if (!cb.readVside(fileName)) {
 			exit(EXIT_FAILURE);
 		}
 	}
