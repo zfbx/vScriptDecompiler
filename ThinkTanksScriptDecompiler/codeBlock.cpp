@@ -502,7 +502,7 @@ bool CodeBlock::readVside(Stream &st)
 	version = stream_readi(st);
 
 	//printf("VERSION IS %u\n", version);
-	assert(version == 34);
+	assert(version == 33 || version == 34);
 
 	size = stream_readi(st);
 #ifdef VERBOSE_CODEBLOCK_READ
@@ -577,12 +577,18 @@ bool CodeBlock::readVside(Stream &st)
 
 	for (i = 0; i < codeLength; i++)
 	{
-		//U8 b;
-		//st.read((char*)&b, 1);
-		//if (b == 0xFF)
+		if (version > 33)
+		{
 			code[i] = stream_readi(st);
-		//else
-		//	code[i] = b;
+			continue;
+		}
+
+		U8 b;
+		st.read((char*)&b, 1);
+		if (b == 0xFF)
+			code[i] = stream_readi(st);
+		else
+			code[i] = b;
 	}
 
 	fprintf(stderr, "Breaks at position 0x%X\n", (unsigned int)st.tellg());
