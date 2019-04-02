@@ -40,6 +40,7 @@
 #include <stdarg.h>
 #include <string>
 #include <sstream>
+#pragma warning(disable : 4996) 
 
 #include "platform/platform.h"
 #include "consoleDump.h"

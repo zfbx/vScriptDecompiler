@@ -36,6 +36,8 @@
 #include <stdio.h>
 #include <assert.h>
 
+#pragma warning(disable : 4996) 
+
 #include "codeBlock.h"
 
 using namespace Compiler;
