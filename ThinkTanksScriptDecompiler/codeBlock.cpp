@@ -593,7 +593,9 @@ bool CodeBlock::readVside(Stream &st)
 			code[i] = b;
 	}
 
+#ifdef VERBOSE_CODEBLOCK_READ
 	fprintf(stderr, "Breaks at position 0x%X\n", (unsigned int)st.tellg());
+#endif
 
 	for (i = codeLength; i < totSize; i++)
 		code[i] = stream_readi(st);
@@ -603,7 +605,10 @@ bool CodeBlock::readVside(Stream &st)
 	// StringTable-ize our identifiers.
 	U32 identCount;
 	identCount = stream_readi(st);
-	printf("%u identifiers present\n", identCount);
+#ifdef VERBOSE_CODEBLOCK_READ
+	fprintf(stderr, "%u identifiers present\n", identCount);
+#endif
+
 	while (identCount--)
 	{
 		U32 offset;
