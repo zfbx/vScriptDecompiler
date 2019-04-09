@@ -1175,11 +1175,11 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 			break;
 		}
 
-		/*case OP_FINISH_OBJECT:
+		case OP_FINISH_OBJECT:
 		{
 			printf("OP_FINISH_OBJECT\n");
 			break;
-		}*/
+		}
 
 		case OP_JMPIFFNOT:
 		{
@@ -1264,7 +1264,7 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 			break;
 		}
 
-		/*case OP_RETURN_VOID:
+		case OP_RETURN_VOID:
 		{
 			printf("OP_RETURNVOID\n");
 
@@ -1292,7 +1292,7 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 				return;
 
 			break;
-		}*/
+		}
 
 		case OP_CMPEQ:
 		{
@@ -1606,24 +1606,12 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 			break;
 		}
 
-		/*case OP_SETCUROBJECT:
-		{
-			printf("OP_SETCUROBJECT\n");
-			break;
-		}
-
-		case OP_SETCUROBJECT_NEW:
-		{
-			printf("OP_SETCUROBJECT_NEW\n");
-			break;
-		}
-
 		case OP_SETCUROBJECT_INTERNAL:
 		{
 			printf("OP_SETCUROBJECT_INTERNAL\n");
 			++ip;
 			break;
-		}*/
+		}
 
 		case OP_SETCURFIELD:
 		{
@@ -1636,7 +1624,7 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 			break;
 		}
 
-		/*case OP_SETCURFIELD_ARRAY:
+		case OP_SETCURFIELD_ARRAY:
 		{
 			printf("OP_SETCURFIELD_ARRAY\n");
 			break;
@@ -1648,7 +1636,7 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 			printf("OP_SETCURFIELD_TYPE type=%i\n", type);
 			++ip;
 			break;
-		}*/
+		}
 
 		case OP_LOADFIELD_UINT:
 		{
@@ -1785,11 +1773,11 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 			break;
 		}
 
-		/*case OP_COPYVAR_TO_NONE:
+		case OP_COPYVAR_TO_NONE:
 		{
 			printf("OP_COPYVAR_TO_NONE\n");
 			break;
-		}*/
+		}
 
 		case OP_LOADIMMED_UINT:
 		{
@@ -1835,13 +1823,13 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 			break;
 		}
 
-		/*case OP_DOCBLOCK_STR:
+		case OP_DOCBLOCK_STR:
 		{
 			const char* str = (smInFunction ? functionStrings : globalStrings) + code[ip];
 			printf("OP_DOCBLOCK_STR str=%s\n", str);
 			++ip;
 			break;
-		}*/
+		}
 
 		case OP_LOADIMMED_IDENT:
 		{
@@ -1962,7 +1950,7 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 			break;
 		}
 
-		/*case OP_PUSH_UINT:
+		case OP_PUSH_UINT:
 		{
 			printf("OP_PUSH_UINT\n");
 			break;
@@ -1978,7 +1966,7 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 		{
 			printf("OP_PUSH_VAR\n");
 			break;
-		}*/
+		}
 
 		case OP_PUSH_FRAME:
 		{
@@ -1989,7 +1977,7 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 			break;
 		}
 
-		/*case OP_ASSERT:
+		case OP_ASSERT:
 		{
 			const char* message = (smInFunction ? functionStrings : globalStrings) + code[ip];
 			printf("OP_ASSERT message=%s\n", message);
@@ -2039,7 +2027,7 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 		{
 			printf("OP_ITER_END\n");
 			break;
-		}*/
+		}
 
 		default:
 			U32 size = 1;

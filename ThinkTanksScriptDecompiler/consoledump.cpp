@@ -169,7 +169,7 @@ struct Expression
 			}
 			else {
 				type = STRINGLITERAL;
-				strVal = "";
+				strVal = NULL;
 			}
 		}
 		else {
@@ -589,16 +589,16 @@ class Decompiler
 	CodeBlock & block;
 
 	Expression exprStack[MaxStackSize * 2];
-	U32 _EXPR = 0;
+	S32 _EXPR = 0;
 
 	Frame frameStack[MaxStackSize]; // track frame starts
 	U32 callFrame[MaxStackSize];  // track current position in callArgs for current frame
 	U32 callArgs[MaxStackSize];
 
-	U32 _ITER = 0;    ///< Stack pointer for iterStack.
-	U32 _FRAME = 0;
-	U32 _CALLFR = 0;
-	U32 _CALLARGS = 0;
+	S32 _ITER = 0;    ///< Stack pointer for iterStack.
+	S32 _FRAME = 0;
+	S32 _CALLFR = 0;
+	S32 _CALLARGS = 0;
 	StringTableEntry curPackage = NULL;
 	F64 *curFloatTable = NULL;
 	char *curStringTable = NULL;
@@ -701,7 +701,7 @@ public:
 		CheckFrameWrite(_FRAME);
 	}
 
-	void CheckFrameWrite(U32 idx)
+	void CheckFrameWrite(S32 idx)
 	{
 		if (idx > 0)
 		{
@@ -725,7 +725,7 @@ public:
 					{
 						Expression& expr = exprStack[curFrame.expr];
 						writeExpr(writer, curFrame.expr);
-						for (U32 idx = walkExpr(curFrame.expr - 1), end = curFrame.expr; idx <= end; idx++)
+						for (S32 idx = walkExpr(curFrame.expr - 1), end = curFrame.expr; idx <= end; idx++)
 							exprStack[idx].reset();
 					}	break;
 					case Frame::ELSE:
@@ -739,7 +739,7 @@ public:
 	/// Check for end of frame and close out block
 	bool CheckFrameEnd(U32 ip)
 	{
-		U32 maxExpr = 0;
+		S32 maxExpr = 0;
 		bool changed = false;
 		while (_FRAME > 0)
 		{
@@ -805,7 +805,7 @@ public:
 
 			if (_EXPR > maxExpr)
 			{
-				for (U32 idx = maxExpr; idx < _EXPR; ++idx)
+				for (S32 idx = maxExpr; idx < _EXPR; ++idx)
 					exprStack[idx].reset();
 				_EXPR = maxExpr;
 			}
@@ -853,7 +853,7 @@ public:
 		if (_EXPR <= 0) {
 			exprStack[0].reset();
 		} else {
-			U32 idx = walkExpr(_EXPR);
+			S32 idx = walkExpr(_EXPR);
 			while (_EXPR >= idx && _EXPR > 0)
 				exprStack[_EXPR--].reset();
 			collapseExpr();
@@ -864,7 +864,7 @@ public:
 		writeExpr(writer, _EXPR, wrap);
 	}
 
-	U32 walkExpr(U32 idx) {
+	S32 walkExpr(S32 idx) {
 		if (idx < 0 || idx > _EXPR)
 			return 0;
 		Expression &expr = exprStack[idx];
@@ -883,10 +883,10 @@ public:
 			switch (expr.op.val)
 			{
 			case 0:
-				U32 arg3 = walkExpr(idx - 1);
-				U32 elsebr = walkExpr(arg3 - 1);
-				U32 arg2 = walkExpr(elsebr - 1);
-				U32 cond = walkExpr(arg2 - 1);
+				S32 arg3 = walkExpr(idx - 1);
+				S32 elsebr = walkExpr(arg3 - 1);
+				S32 arg2 = walkExpr(elsebr - 1);
+				S32 cond = walkExpr(arg2 - 1);
 				return cond;
 				//return walkExpr(cond-1);
 				break;
@@ -918,9 +918,9 @@ public:
 			case OP_SETCURVAR_ARRAY:
 			case OP_SETCURVAR_ARRAY_CREATE:
 			{
-				U32 arg1 = idx - 2; // index
-				U32 arg2 = walkExpr(arg1) - 1; // array
-				U32 arg3 = walkExpr(arg2) - 1; // array
+				S32 arg1 = idx - 2; // index
+				S32 arg2 = walkExpr(arg1) - 1; // array
+				S32 arg3 = walkExpr(arg2) - 1; // array
 				return arg3 + 1;
 			} break;
 			case OP_SETCURFIELD_ARRAY:
@@ -929,9 +929,9 @@ public:
 			case OP_SAVEFIELD_UINT:
 			case OP_SAVEFIELD_STR:
 			{
-				U32 arg1 = idx - 1; // index
-				U32 arg2 = walkExpr(arg1) - 1; // array
-				U32 arg3 = walkExpr(arg2) - 1; // array
+				S32 arg1 = idx - 1; // index
+				S32 arg2 = walkExpr(arg1) - 1; // array
+				S32 arg3 = walkExpr(arg2) - 1; // array
 				Expression &earg2 = exprStack[arg2];
 				if (earg2.type == Expression::BINARYOP) // special case
 				{
@@ -950,9 +950,9 @@ public:
 			case OP_LOADFIELD_FLT:
 			case OP_LOADFIELD_STR:
 			{
-				U32 arg1 = idx - 1;
-				U32 arg2 = walkExpr(arg1) - 1;
-				U32 arg3 = walkExpr(arg2) - 2; // array
+				S32 arg1 = idx - 1;
+				S32 arg2 = walkExpr(arg1) - 1;
+				S32 arg3 = walkExpr(arg2) - 2; // array
 				Expression &earg2 = exprStack[arg2];
 				bool isArray = (earg2.type == Expression::ARRAYOP && earg2.op.val == OP_SETCURFIELD_ARRAY);
 				if (isArray) {
@@ -993,7 +993,7 @@ public:
 		return 0;
 	}
 
-	bool shouldWrapExpr(U32 idx)
+	bool shouldWrapExpr(S32 idx)
 	{
 		if (idx < 0 || idx > _EXPR)
 			return false;
@@ -1047,7 +1047,7 @@ public:
 		return false;
 	}
 
-	void writeExpr(CodeWriter& writer, U32 idx, bool wrap = false, bool ignoreFrame = false) {
+	void writeExpr(CodeWriter& writer, S32 idx, bool wrap = false, bool ignoreFrame = false) {
 		if (idx < 0 || idx > _EXPR)
 			return;
 		if (!ignoreFrame)
@@ -1088,8 +1088,8 @@ public:
 
 		case Expression::BINARYOP:
 		{
-			U32 arg1 = idx - 1;
-			U32 arg2 = walkExpr(arg1) - 1;
+			S32 arg1 = idx - 1;
+			S32 arg2 = walkExpr(arg1) - 1;
 			if (wrap) writer.append("(");
 
 			if (expr.op.val == OP_OR || expr.op.val == OP_AND)
@@ -1129,7 +1129,7 @@ public:
 
 		case Expression::STRINGOP:
 		{
-			U32 arg1 = idx - 1;
+			S32 arg1 = idx - 1;
 			if (expr.op.val == OP_TERMINATE_REWIND_STR
 				|| expr.op.val == OP_ADVANCE_STR_NUL
 				)
@@ -1138,7 +1138,7 @@ public:
 			}
 			else if (expr.op.val == OP_REWIND_STR)
 			{
-				U32 arg2 = walkExpr(arg1) - 1;
+				S32 arg2 = walkExpr(arg1) - 1;
 				if (wrap) writer.append("(");
 				writeExpr(writer, arg2, false, ignoreFrame);
 				writeExpr(writer, arg1, false, ignoreFrame);
@@ -1146,7 +1146,7 @@ public:
 			}
 			else if (expr.op.val == OP_COMPARE_STR)
 			{
-				U32 arg2 = walkExpr(arg1) - 1;
+				S32 arg2 = walkExpr(arg1) - 1;
 				if (wrap) writer.append("(");
 				writeExpr(writer, arg2, shouldWrap, ignoreFrame);
 				writer.append(" $= ");
@@ -1160,7 +1160,7 @@ public:
 			}
 			else if (expr.op.val == OP_ADVANCE_STR_APPENDCHAR)
 			{
-				U32 arg2 = walkExpr(arg1) - 1;
+				S32 arg2 = walkExpr(arg1) - 1;
 				writeExpr(writer, arg1, shouldWrap, ignoreFrame);
 				switch (expr.op.arg)
 				{
@@ -1172,7 +1172,7 @@ public:
 			}
 			else
 			{
-				U32 arg2 = walkExpr(arg1) - 1;
+				S32 arg2 = walkExpr(arg1) - 1;
 				Expression expr2 = exprStack[arg2];
 				//writeExpr(writer, arg2, shouldWrap, ignoreFrame);
 				writeExpr(writer, arg1, shouldWrap, ignoreFrame);
@@ -1193,8 +1193,8 @@ public:
 				break;
 			case OP_SETCURFIELD_ARRAY:
 			{
-				U32 arg1 = idx - 1;
-				U32 arg2 = walkExpr(arg1) - 1;
+				S32 arg1 = idx - 1;
+				S32 arg2 = walkExpr(arg1) - 1;
 				writeExpr(writer, arg2, false, ignoreFrame);
 				writer.append(".");
 				writeExpr(writer, arg1, false, ignoreFrame);
@@ -1204,9 +1204,9 @@ public:
 			case OP_LOADFIELD_FLT:
 			case OP_LOADFIELD_STR:
 			{
-				U32 arg1 = idx - 1;
-				U32 arg2 = walkExpr(arg1) - 1;
-				U32 arg3 = walkExpr(arg2) - 2; // array
+				S32 arg1 = idx - 1;
+				S32 arg2 = walkExpr(arg1) - 1;
+				S32 arg3 = walkExpr(arg2) - 2; // array
 				Expression &earg2 = exprStack[arg2];
 				bool isArray = (earg2.type == Expression::ARRAYOP && earg2.op.val == OP_SETCURFIELD_ARRAY);
 				if (isArray) {
@@ -1236,9 +1236,9 @@ public:
 			case OP_SAVEFIELD_UINT:
 			case OP_SAVEFIELD_STR:
 			{
-				U32 arg1 = idx - 1; // index
-				U32 arg2 = walkExpr(arg1) - 1; // array
-				U32 arg3 = walkExpr(arg2) - 2; // array
+				S32 arg1 = idx - 1; // index
+				S32 arg2 = walkExpr(arg1) - 1; // array
+				S32 arg3 = walkExpr(arg2) - 2; // array
 
 				Expression& earg2 = exprStack[arg2];
 				if (earg2.type == Expression::BINARYOP) // TODO: special case hack for a.b++;  Honestly the curfield,curobject,curfieldarray needs a rewrite
@@ -1288,8 +1288,8 @@ public:
 			{
 			/*case OP_SETCUROBJECT_INTERNAL:
 			{
-				U32 arg1 = idx - 1;
-				U32 arg2 = walkExpr(arg1) - 1;
+				S32 arg1 = idx - 1;
+				S32 arg2 = walkExpr(arg1) - 1;
 				writeExpr(writer, arg2, false, ignoreFrame);
 				writer.append("-->");
 				writeExpr(writer, arg1, false, ignoreFrame);
@@ -1300,7 +1300,7 @@ public:
 			case OP_FLT_TO_NONE:
 			case OP_UINT_TO_NONE:
 			{
-				U32 arg1 = idx - 1;
+				S32 arg1 = idx - 1;
 				writeExpr(writer, arg1, false, ignoreFrame);
 				writer.endLine();
 				popExpr();
@@ -1346,10 +1346,10 @@ public:
 			switch (expr.op.val)
 			{
 			case 0:
-				U32 arg3 = walkExpr(idx - 1);
-				U32 elsebr = walkExpr(arg3 - 1);
-				U32 arg2 = walkExpr(elsebr - 1);
-				U32 cond = arg2 - 2;
+				S32 arg3 = walkExpr(idx - 1);
+				S32 elsebr = walkExpr(arg3 - 1);
+				S32 arg2 = walkExpr(elsebr - 1);
+				S32 cond = arg2 - 2;
 
 				writeExpr(writer, cond, false, ignoreFrame);
 				writer.append(" ? ");
@@ -1581,8 +1581,8 @@ public:
 				StringTableEntry fnName = block.CodeToSTE(code, ip);
 				U32 callType = code[ip + 2];
 
-				U32 argsPos = callFrame[--_CALLFR];
-				U32 argOffset = 0;
+				S32 argsPos = callFrame[--_CALLFR];
+				S32 argOffset = 0;
 				if (callType == callTypes::MethodCall)
 				{
 					U32 exprStart = callArgs[argsPos];
@@ -1598,15 +1598,15 @@ public:
 				writer.append(fnName).append("(");
 				ip += 3;
 
-				U32 argc = _CALLARGS - argsPos;
-				U32 frameStart = _EXPR;
-				for (U32 i = argOffset; i < argc; ++i)
+				S32 argc = _CALLARGS - argsPos;
+				S32 frameStart = _EXPR;
+				for (S32 i = argOffset; i < argc; ++i)
 				{					
 					if (i > argOffset) writer.append(", ");
 					U32 exprStart = callArgs[argsPos + i];
 					writeExpr(writer, exprStart, false, ignoreFrames);
 				}
-				for (U32 i = 0; i < argc; ++i) popExpr();
+				for (S32 i = 0; i < argc; ++i) popExpr();
 				// cleanup 
 				_CALLARGS = argsPos;
 				writer.append(")");
@@ -1886,7 +1886,6 @@ public:
 
 				Frame &curFrame = GetCurrentFrame();
 				if (curFrame.type == Frame::OBJECT) {
-					CheckFrameEnd(ip);
 					bool changed = CheckFrameEnd(ip);
 
 					if (changed) {
@@ -1902,8 +1901,8 @@ public:
 			{
 				CodeWriter literalStr;
 
-				U32 arg1 = _EXPR-1; // index
-				U32 arg2 = walkExpr(arg1) - 2; // array
+				S32 arg1 = _EXPR-1; // index
+				S32 arg2 = walkExpr(arg1) - 2; // array
 
 				writeExpr(literalStr, arg2);
 				literalStr.append("[");
@@ -1938,10 +1937,10 @@ public:
 				else
 					defWriter.append("new ");
 				
-				U32 argsPos = callFrame[--_CALLFR];
-				U32 argc = _CALLARGS - argsPos;
-				U32 frameStart = _EXPR;
-				for (U32 i = 0; i < argc; ++i)
+				S32 argsPos = callFrame[--_CALLFR];
+				S32 argc = _CALLARGS - argsPos;
+				S32 frameStart = _EXPR;
+				for (S32 i = 0; i < argc; ++i)
 				{
 					if (i > 1) defWriter.append(", ");
 					U32 exprStart = callArgs[argsPos + i];
@@ -1956,7 +1955,7 @@ public:
 				}
 				// cleanup 
 				_CALLARGS = argsPos;
-				U32 exprStart = (argsPos == 0) ? 0 : callArgs[argsPos];
+				S32 exprStart = (argsPos == 0) ? 0 : callArgs[argsPos];
 				while (_EXPR > exprStart) {
 					popExpr();
 				}
@@ -2056,7 +2055,7 @@ public:
 				StringTableEntry  str = curStringTable ? curStringTable + code[ip++] : "";
 				//StringTableEntry alertString = U32toSTE(code[ip++]);
 				writer.append("assert(");
-				U32 arg1 = _EXPR; // index
+				S32 arg1 = _EXPR; // index
 				writeExpr(writer, arg1);
 				writer.append(", ").appendLiteral(str).append(")").endLine();
 				popExpr();
@@ -2072,8 +2071,8 @@ public:
 				StringTableEntry varName = U32toSTE(code[ip]);
 				U32 failIp = code[ip + 1];
 
-				U32 arg1 = _EXPR; // index
-				//U32 arg2 = walkExpr(arg1) - 2; // array
+				S32 arg1 = _EXPR; // index
+				//S32 arg2 = walkExpr(arg1) - 2; // array
 
 				CodeWriter &forWriter = (*this->curWriter);
 				forWriter.append("foreach ( ");
