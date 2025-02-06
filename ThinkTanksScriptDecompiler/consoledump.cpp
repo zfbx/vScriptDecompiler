@@ -1459,7 +1459,6 @@ public:
 					writer.endLine();
 				}
 				ip += 6 + argc;
-				writer.appendline();
 				break;
 			}
 
@@ -1468,9 +1467,15 @@ public:
 				CheckFrameWrite();
 				CheckPackageScope();
 				CodeWriter &writer = (*this->curWriter);
-				writer.append("return ");
-				writeCurrentExpr(writer);
-				writer.endLine();
+				Frame& curFrame = GetCurrentFrame();
+				if (_FRAME == 0 || (curFrame.type == Frame::FUNC && curFrame.end == ip)) {
+					// Skip return for the last instruction of the frame
+				}
+				else {
+					writer.append("return ");
+					writeCurrentExpr(writer);
+					writer.endLine();
+				}
 				popExpr();
 			} break;
 
