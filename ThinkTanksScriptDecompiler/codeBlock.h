@@ -29,6 +29,7 @@
 // ThinkTanks' DSO format
 //
 // jamesu 2019 - added changes to optionally work with onverse scripts.
+// zfbx 2025 - removed onverse to focus on vside debugging
 //-----------------------------------------------------------------------------
 
 #ifndef _CODEBLOCK_H_
@@ -53,13 +54,7 @@ public:
 	CodeBlock();
 	~CodeBlock();
 
-	static void decodeOnverseStrings(char* data, S32 len);
-	static U32 convertOnverseOpcode(U32 op);
-	static U32 convertVsideOpcode(U32 op);
-
 	bool m_loaded;
-	bool m_onverse;
-	bool m_vside;
 
 	StringTableEntry name;
 	StringTableEntry fullPath;
@@ -87,11 +82,7 @@ public:
 	U32 version;
 
 	///
-	bool read(String &fileName);
-	bool readOnverse(String &fileName);
 	bool readVside(String &fileName);
-	bool read(Stream &st);
-	bool readOnverse(Stream &st);
 	bool readVside(Stream &st);
 
 	inline StringTableEntry CodeToSTE(U32 *code, U32 ip);

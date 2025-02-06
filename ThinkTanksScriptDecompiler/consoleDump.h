@@ -7,6 +7,7 @@
 // ThinkTanks' DSO format
 //
 // jamesu 2019 - added changes to optionally work with onverse scripts.
+// zfbx 2025 - removed onverse to focus on vside debugging
 //-----------------------------------------------------------------------------
 
 #ifndef _CONSOLEDUMP_H_

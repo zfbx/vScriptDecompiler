@@ -31,6 +31,7 @@
 // ThinkTanks' DSO format
 //
 // jamesu 2019 - added changes to optionally work with onverse scripts.
+// zfbx 2025 - removed onverse to focus on vside debugging
 //-----------------------------------------------------------------------------
 
 #include <iostream>
@@ -608,12 +609,10 @@ class Decompiler
 	CodeWriter *curWriter;
 	U32 _WRITER = 0;
 	U32 curInstructionPointer = 0;
-	bool m_onverse;
-	bool m_vside;
 
 public:
 
-	Decompiler(CodeBlock & cb) : block(cb), m_onverse(cb.m_onverse), m_vside(cb.m_vside) {}
+	Decompiler(CodeBlock & cb) : block(cb) {}
 
 	void reset() {
 		curInstructionPointer = 0;
@@ -646,7 +645,7 @@ public:
 		if (curPackage != package){
 			if (curPackage) (*curWriter).endBlock(true).appendline().flush();
 			curPackage = package;
-			if (curPackage) (*curWriter).format("package %s", curPackage).appendline().startBlock();
+			if (curPackage) (*curWriter).format("package %s", curPackage).append(" ").startBlock().appendline();
 		}
 	}
 
@@ -1331,12 +1330,12 @@ public:
 				writer.append("if (");
 				if (invertJump) writer.append("!");
 				writeExpr(writer, expr - 1, invertJump, ignoreFrame);
-				writer.appendline(")");
+				writer.append(") ");
 				writer.startBlock();
 			}	break;
 
 			case OP_JMP:
-				writer.appendline("else").startBlock();
+				writer.append("else ").startBlock();
 				break;
 			}
 		} break;
@@ -1419,14 +1418,6 @@ public:
 			; ip < codeSize
 			; instruction = (Compiler::CompiledInstructions)code[curInstructionPointer = ip++])
 		{
-			if (m_onverse)
-			{
-				instruction = (Compiler::CompiledInstructions)CodeBlock::convertOnverseOpcode((U32)instruction);
-			}
-			else if (m_vside)
-			{
-				instruction = (Compiler::CompiledInstructions)CodeBlock::convertVsideOpcode((U32)instruction);
-			}
 
 			switch (instruction) {
 			default:
@@ -1460,7 +1451,7 @@ public:
 				}
 				writer.append(")");
 				if (hasBody) {
-					writer.appendline().startBlock();
+					writer.append(" ").startBlock();
 					SetFunctionTable();
 					PushFrameEnd(Frame::FUNC, ip, newIp, true);
 				}
@@ -1468,6 +1459,7 @@ public:
 					writer.endLine();
 				}
 				ip += 6 + argc;
+				writer.appendline();
 				break;
 			}
 
@@ -1481,7 +1473,9 @@ public:
 				writer.endLine();
 				popExpr();
 			} break;
-			/*case OP_RETURN_VOID:
+
+			// TODO: why was this commented out? -Tony
+			case OP_RETURN_VOID:
 			{
 				CheckFrameWrite();
 				CheckPackageScope();
@@ -1490,10 +1484,10 @@ public:
 				if (_FRAME == 0 || (curFrame.type == Frame::FUNC && curFrame.end == ip)) {
 					; // skip return for last instruction of frame
 				} else {
-					writer.append("return").endLine();
+					//writer.append("return").endLine();
 				}
 				collapseExpr();
-			} break;*/
+			} break;
 
 			case OP_SETCURVAR:
 			case OP_SETCURVAR_CREATE:
@@ -1800,7 +1794,7 @@ public:
 						{
 							// default to else
 							CheckFrameEnd(ip + 1);
-							writer.appendline("else").startBlock();
+							writer.append("else ").startBlock();
 							PushFrameEnd(Frame::ELSE, ip - 2, newIp);
 						}
 					}
@@ -1967,7 +1961,7 @@ public:
 
 				// check if empty block or not
 				if (code[ip + 6] != OP_ADD_OBJECT) {// || code[ip + 7] != OP_FINISH_OBJECT) {
-					defWriter.appendline().startBlock();
+					defWriter.append(" ").startBlock();
 					PushFrameEnd(Frame::OBJECT,ip,failJump+1);
 				}
 				ip += 3;

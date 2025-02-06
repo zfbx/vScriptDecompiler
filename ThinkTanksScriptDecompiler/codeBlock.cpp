@@ -29,6 +29,7 @@
 // ThinkTanks' DSO format
 //
 // jamesu 2019 - added changes to optionally work with onverse scripts. Also vside.
+// zfbx 2025 - removed onverse to focus on vside debugging
 //-----------------------------------------------------------------------------
 
 #include <iostream>
@@ -42,180 +43,6 @@
 
 using namespace Compiler;
 using namespace std;
-
-
-static U32 smOnverseOpcodeMap[] = {
-	OP_FUNC_DECL,
-	OP_CREATE_OBJECT,
-	OP_ADD_OBJECT,
-	OP_END_OBJECT,
-	OP_JMPIFFNOT,
-	OP_JMPIFNOT,
-	OP_JMPIFF,
-	OP_JMPIF,
-	OP_JMPIFNOT_NP,
-	OP_JMPIF_NP,
-	OP_JMP,
-	OP_RETURN,
-	OP_CMPEQ,
-	OP_CMPGR,
-	OP_CMPGE,
-	OP_CMPLT,
-	OP_CMPLE,
-	OP_CMPNE,
-	OP_XOR,
-	OP_MOD,
-	OP_BITAND,
-	OP_BITOR,
-	OP_NOT,
-	OP_NOTF,
-	OP_ONESCOMPLEMENT,
-	OP_SHR,
-	OP_SHL,
-	OP_AND,
-	OP_OR,
-	OP_ADD,
-	OP_SUB,
-	OP_MUL,
-	OP_DIV,
-	OP_NEG,
-	OP_SETCURVAR,
-	OP_SETCURVAR_CREATE,
-	OP_SETCURVAR_ARRAY,
-	OP_SETCURVAR_ARRAY_CREATE,
-	OP_LOADVAR_UINT,
-	OP_LOADVAR_FLT,
-	OP_LOADVAR_STR,
-	OP_SAVEVAR_UINT,
-	OP_SAVEVAR_FLT,
-	OP_SAVEVAR_STR,
-	OP_SETCUROBJECT,
-	OP_SETCUROBJECT_NEW,
-	OP_SETCURFIELD,
-	OP_SETCURFIELD_ARRAY,
-	OP_LOADFIELD_UINT,
-	OP_LOADFIELD_FLT,
-	OP_LOADFIELD_STR,
-	OP_SAVEFIELD_UINT,
-	OP_SAVEFIELD_FLT,
-	OP_SAVEFIELD_STR,
-	OP_STR_TO_UINT,
-	OP_STR_TO_FLT,
-	OP_STR_TO_NONE,
-	OP_FLT_TO_UINT,
-	OP_FLT_TO_STR,
-	OP_FLT_TO_NONE,
-	OP_UINT_TO_FLT,
-	OP_UINT_TO_STR,
-	OP_UINT_TO_NONE,
-	OP_LOADIMMED_UINT,
-	OP_LOADIMMED_FLT,
-	OP_TAG_TO_STR,
-	OP_LOADIMMED_STR,
-	OP_LOADIMMED_IDENT,
-	OP_CALLFUNC_RESOLVE,
-	OP_CALLFUNC,
-	OP_ADVANCE_STR,
-	OP_ADVANCE_STR_APPENDCHAR,
-	OP_ADVANCE_STR_COMMA,
-	OP_ADVANCE_STR_NUL,
-	OP_REWIND_STR,
-	OP_TERMINATE_REWIND_STR,
-	OP_COMPARE_STR,
-	OP_PUSH,
-	OP_PUSH_FRAME,
-	OP_BREAK,
-	OP_INVALID
-};
-
-
-static U32 smVsideOpcodeMap[] = {
-
-   OP_FUNC_DECL,
-   OP_CREATE_OBJECT,
-   OP_INVALID, //OP_CREATE_DATABLOCK,     // REMOVED 36
-   OP_INVALID, //OP_NAME_OBJECT,          // REMOVED 36
-   OP_ADD_OBJECT,
-   OP_END_OBJECT,
-   OP_JMPIFFNOT,
-   OP_JMPIFNOT,
-   OP_JMPIFF,
-   OP_JMPIF,
-   OP_JMPIFNOT_NP,
-   OP_JMPIF_NP,
-   OP_JMP,
-   OP_RETURN,
-   OP_CMPEQ,
-   OP_CMPGR,      //  SAME
-   OP_CMPGE,
-   OP_CMPLT,
-   OP_CMPLE,
-   OP_CMPNE,
-   OP_XOR,       //   SAME
-   OP_MOD,
-   OP_BITAND,
-   OP_BITOR,
-   OP_NOT,
-   OP_NOTF,
-   OP_ONESCOMPLEMENT,
-   OP_SHR,
-   OP_SHL,
-   OP_AND,
-   OP_OR,
-   OP_ADD,
-   OP_SUB,
-   OP_MUL,
-   OP_DIV,
-   OP_NEG,
-   OP_SETCURVAR,
-   OP_SETCURVAR_CREATE,
-   OP_SETCURVAR_ARRAY,
-   OP_SETCURVAR_ARRAY_CREATE,
-   OP_LOADVAR_UINT,
-   OP_LOADVAR_FLT,
-   OP_LOADVAR_STR,
-   OP_SAVEVAR_UINT,
-   OP_SAVEVAR_FLT,
-   OP_SAVEVAR_STR,
-   OP_SETCUROBJECT,
-   OP_SETCUROBJECT_NEW,
-   OP_SETCURFIELD,
-   OP_SETCURFIELD_ARRAY,
-   OP_LOADFIELD_UINT,
-   OP_LOADFIELD_FLT,
-   OP_LOADFIELD_STR,
-   OP_SAVEFIELD_UINT,
-   OP_SAVEFIELD_FLT,
-   OP_SAVEFIELD_STR,
-   OP_STR_TO_UINT,
-   OP_STR_TO_FLT,
-   OP_STR_TO_NONE,
-   OP_FLT_TO_UINT,
-   OP_FLT_TO_STR,
-   OP_FLT_TO_NONE,
-   OP_UINT_TO_FLT,
-   OP_UINT_TO_STR,
-   OP_UINT_TO_NONE,
-   OP_LOADIMMED_UINT,
-   OP_LOADIMMED_FLT,
-   OP_TAG_TO_STR,
-   OP_LOADIMMED_STR,
-   OP_LOADIMMED_IDENT,
-   OP_CALLFUNC_RESOLVE,
-   OP_CALLFUNC,
-   OP_INVALID, //OP_PROCESS_ARGS,            // NOT REMOVED IN VSIDE
-   OP_ADVANCE_STR,
-   OP_ADVANCE_STR_APPENDCHAR,
-   OP_ADVANCE_STR_COMMA,      // SAME
-   OP_ADVANCE_STR_NUL,
-   OP_REWIND_STR,             // SAME
-   OP_TERMINATE_REWIND_STR,
-   OP_COMPARE_STR,
-   OP_PUSH,
-   OP_PUSH_FRAME,
-   OP_BREAK,
-   OP_INVALID
-};
 
 //-----------------------------------------------------------------------------
 // Constructor/Destructor
@@ -239,8 +66,6 @@ CodeBlock::CodeBlock()
 	name = NULL;
 	fullPath = NULL;
 	modPath = NULL;
-	m_onverse = false;
-	m_vside = false;
 	m_loaded = false;
 }
 
@@ -257,43 +82,6 @@ CodeBlock::~CodeBlock()
 	delete[] functionFloats;
 	delete[] code;
 	delete[] breakList;
-}
-
-// Decodes encrypted onverse strings
-void CodeBlock::decodeOnverseStrings(char* data, S32 len)
-{
-	U8* udata = (U8*)data;
-
-	for (S32 i=0; i<len; i++)
-	{
-		S32 relPos = len - i;
-		if (i >= relPos)
-		{
-			break;
-		}
-
-		U8 startByte = udata[i];
-		U8 endByte = udata[len-i-1];
-
-		data[i] = endByte ^ 0xCF;
-		data[len-i-1] = startByte ^ 0xCF; 
-	}
-}
-
-U32 CodeBlock::convertOnverseOpcode(U32 op)
-{
-	const U32 numOVOps = sizeof(smOnverseOpcodeMap) / sizeof(U32);
-	if (op >= numOVOps)
-		return OP_INVALID;
-	return smOnverseOpcodeMap[op];
-}
-
-U32 CodeBlock::convertVsideOpcode(U32 op)
-{
-	const U32 numOVOps = sizeof(smVsideOpcodeMap) / sizeof(U32);
-	if (op >= numOVOps)
-		return OP_INVALID;
-	return smVsideOpcodeMap[op];
 }
 
 //-----------------------------------------------------------------------------
@@ -321,165 +109,6 @@ F64 stream_readf(Stream &st) {
 	assert(!st.fail());
 
 	return res;
-}
-
-//-----------------------------------------------------------------------------
-// Parse DSO files
-// Compatible with Onverses DSO version
-//-----------------------------------------------------------------------------
-bool CodeBlock::readOnverse(String &fileName) {
-	std::ifstream st (fileName, std::fstream::binary);
-	if (st.fail())
-	{
-		cerr << "ERROR: Could not open file '" << fileName << "'." << endl;
-		return false;
-	}
-
-	return readOnverse(st);
-}
-
-bool CodeBlock::readOnverse(Stream &st)
-{
-	assert(!m_loaded);
-
-	U32 globalSize, size, i;
-
-	version = stream_readi(st);
-
-	assert(version == 0x25 || version == 0x24);
-
-	size = stream_readi(st);
-#ifdef VERBOSE_CODEBLOCK_READ
-	fprintf(stderr, "Reading %d bytes of globalStrings, currently at position 0x%X\n", size, (unsigned int)st.tellg());
-#endif
-	if (size)
-	{
-		globalStrings = new char[size];
-		globalStringsMaxLen = size;
-		st.read(globalStrings, size);
-		if (version > 0x24) decodeOnverseStrings(globalStrings, size);
-	}
-	globalSize = size;
-
-	size = stream_readi(st);
-#ifdef VERBOSE_CODEBLOCK_READ
-	fprintf(stderr, "Reading %d bytes of functionStrings, currently at position 0x%X\n", size, (unsigned int)st.tellg());
-#endif
-	if (size)
-	{
-		functionStrings = new char[size];
-		functionStringsMaxLen = size;
-		st.read(functionStrings, size);
-		if (version > 0x24) decodeOnverseStrings(functionStrings, size);
-	}
-
-	// Combine to unified list
-	combinedStrings = new char[globalStringsMaxLen + functionStringsMaxLen + 1];
-	combinedStrings[0] = '\0';
-	memcpy(combinedStrings + 1, globalStrings, globalStringsMaxLen);
-	memcpy(combinedStrings + globalStringsMaxLen + 1, functionStrings, functionStringsMaxLen);
-	delete[] globalStrings;
-	delete[] functionStrings;
-
-	globalStrings = combinedStrings + 1;
-	functionStrings = combinedStrings + globalStringsMaxLen + 1;
-
-	size = stream_readi(st);
-#ifdef VERBOSE_CODEBLOCK_READ
-	fprintf(stderr, "Reading %d bytes of globalFloats, currently at position 0x%X\n", size, (unsigned int)st.tellg());
-#endif
-	if (size)
-	{
-		globalFloats = new F64[size];
-		for (U32 i = 0; i < size; i++)
-			globalFloats[i] = stream_readf(st);
-	}
-
-	size = stream_readi(st);
-#ifdef VERBOSE_CODEBLOCK_READ
-	fprintf(stderr, "Reading %d bytes of functionFloats, currently at position 0x%X\n", size, (unsigned int)st.tellg());
-#endif
-	if (size)
-	{
-		functionFloats = new F64[size];
-		for (U32 i = 0; i < size; i++)
-			functionFloats[i] = stream_readf(st);
-	}
-
-	U32 codeLength;
-	codeLength = stream_readi(st);
-	codeSize = codeLength;
-	lineBreakPairCount = stream_readi(st);
-
-#ifdef VERBOSE_CODEBLOCK_READ
-	fprintf(stderr, "Currently at position 0x%X\n", (unsigned int)st.tellg());
-#endif
-	U32 totSize = codeLength + lineBreakPairCount * 2;
-#ifdef VERBOSE_CODEBLOCK_READ
-	fprintf(stderr, "Code length: %d  Line Break count: %d  totSize: %d\n", codeLength, lineBreakPairCount, totSize);
-#endif
-
-	code = new U32[totSize];
-
-	for (i = 0; i < codeLength; i++)
-	{
-		U8 b;
-		st.read((char*)&b, 1);
-		if (b == 0xFF)
-			code[i] = stream_readi(st);
-		else
-			code[i] = b;
-	}
-
-	for (i = codeLength; i < totSize; i++)
-		code[i] = stream_readi(st);
-
-	lineBreakPairs = code + codeLength;
-
-	// StringTable-ize our identifiers.
-	U32 identCount;
-	identCount = stream_readi(st);
-	while (identCount--)
-	{
-		U32 offset;
-		offset = stream_readi(st);
-
-		/*StringTableEntry ste;
-		if (offset < globalSize)
-			ste = StringTable->insert(globalStrings + offset);
-		else
-			ste = StringTable->insert("");*/
-
-		U32 ste;
-		if (offset < globalSize)
-			ste = offset+1;
-		else
-			ste = 0;
-
-		U32 count;
-		count = stream_readi(st);
-		while (count--)
-		{
-			U32 ip;
-			ip = stream_readi(st);
-
-			code[ip] = (U32)ste;
-		}
-	}
-
-#ifdef VERBOSE_CODEBLOCK_READ
-	fprintf(stderr, "Finished reading, currently at position 0x%X\n", (unsigned int)st.tellg());
-#endif
-	int c = st.peek();
-	assert(c == EOF && st.eof());
-
-	if (lineBreakPairCount)
-		calcBreakList();
-
-	m_loaded = true;
-	m_onverse = true;
-
-	return true;
 }
 
 bool CodeBlock::readVside(String &fileName) {
@@ -579,8 +208,7 @@ bool CodeBlock::readVside(Stream &st)
 
 	for (i = 0; i < codeLength; i++)
 	{
-		if (version > 33)
-		{
+		if (version > 33) {
 			code[i] = stream_readi(st);
 			continue;
 		}
@@ -647,166 +275,10 @@ bool CodeBlock::readVside(Stream &st)
 		calcBreakList();
 
 	m_loaded = true;
-	m_vside = true;
 
 	return true;
 }
 
-//-----------------------------------------------------------------------------
-// Parse DSO files
-// Compatible with ThinkTank's DSO version
-//-----------------------------------------------------------------------------
-bool CodeBlock::read(String &fileName) {
-	std::ifstream st (fileName, std::fstream::binary);
-	if (st.fail())
-	{
-		cerr << "ERROR: Could not open file '" << fileName << "'." << endl;
-		return false;
-	}
-
-	return read(st);
-}
-
-
-bool CodeBlock::read(Stream &st)
-{
-	assert(!m_loaded);
-
-	U32 globalSize, size, i;
-
-	version = stream_readi(st);
-	assert(version == 0x21);
-
-	size = stream_readi(st);
-#ifdef VERBOSE_CODEBLOCK_READ
-	fprintf(stderr, "Reading %d bytes of globalStrings, currently at position 0x%X\n", size, (unsigned int)st.tellg());
-#endif
-	if (size)
-	{
-		globalStrings = new char[size];
-		globalStringsMaxLen = size;
-		st.read(globalStrings, size);
-	}
-	globalSize = size;
-
-	size = stream_readi(st);
-#ifdef VERBOSE_CODEBLOCK_READ
-	fprintf(stderr, "Reading %d bytes of globalFloats, currently at position 0x%X\n", size, (unsigned int)st.tellg());
-#endif
-	if (size)
-	{
-		globalFloats = new F64[size];
-		for (U32 i = 0; i < size; i++)
-			globalFloats[i] = stream_readf(st);
-	}
-
-	size = stream_readi(st);
-#ifdef VERBOSE_CODEBLOCK_READ
-	fprintf(stderr, "Reading %d bytes of functionStrings, currently at position 0x%X\n", size, (unsigned int)st.tellg());
-#endif
-	if (size)
-	{
-		functionStrings = new char[size];
-		functionStringsMaxLen = size;
-		st.read(functionStrings, size);
-	}
-
-	// Combine to unified list
-	combinedStrings = new char[globalStringsMaxLen + functionStringsMaxLen + 1];
-	combinedStrings[0] = '\0';
-	memcpy(combinedStrings + 1, globalStrings, globalStringsMaxLen);
-	memcpy(combinedStrings + globalStringsMaxLen + 1, functionStrings, functionStringsMaxLen);
-	delete[] globalStrings;
-	delete[] functionStrings;
-
-	globalStrings = combinedStrings + 1;
-	functionStrings = combinedStrings + globalStringsMaxLen + 1;
-
-	size = stream_readi(st);
-#ifdef VERBOSE_CODEBLOCK_READ
-	fprintf(stderr, "Reading %d bytes of functionFloats, currently at position 0x%X\n", size, (unsigned int)st.tellg());
-#endif
-	if (size)
-	{
-		functionFloats = new F64[size];
-		for (U32 i = 0; i < size; i++)
-			functionFloats[i] = stream_readf(st);
-	}
-
-	U32 codeLength;
-	codeLength = stream_readi(st);
-	codeSize = codeLength;
-	lineBreakPairCount = stream_readi(st);
-
-#ifdef VERBOSE_CODEBLOCK_READ
-	fprintf(stderr, "Currently at position 0x%X\n", (unsigned int)st.tellg());
-#endif
-	U32 totSize = codeLength + lineBreakPairCount * 2;
-#ifdef VERBOSE_CODEBLOCK_READ
-	fprintf(stderr, "Code length: %d  Line Break count: %d  totSize: %d\n", codeLength, lineBreakPairCount, totSize);
-#endif
-
-	code = new U32[totSize];
-
-	for (i = 0; i < codeLength; i++)
-	{
-		U8 b;
-		st.read((char*)&b, 1);
-		if (b == 0xFF)
-			code[i] = stream_readi(st);
-		else
-			code[i] = b;
-	}
-
-	for (i = codeLength; i < totSize; i++)
-		code[i] = stream_readi(st);
-
-	lineBreakPairs = code + codeLength;
-
-	// StringTable-ize our identifiers.
-	U32 identCount;
-	identCount = stream_readi(st);
-	while (identCount--)
-	{
-		U32 offset;
-		offset = stream_readi(st);
-
-		/*StringTableEntry ste;
-		if (offset < globalSize)
-			ste = StringTable->insert(globalStrings + offset);
-		else
-			ste = StringTable->insert("");*/
-
-		U32 ste;
-		if (offset < globalSize)
-			ste = offset;
-		else
-			ste = globalStringsMaxLen + functionStringsMaxLen; ;
-
-		U32 count;
-		count = stream_readi(st);
-		while (count--)
-		{
-			U32 ip;
-			ip = stream_readi(st);
-
-			code[ip] = (U32)ste;
-		}
-	}
-
-#ifdef VERBOSE_CODEBLOCK_READ
-	fprintf(stderr, "Finished reading, currently at position 0x%X\n", (unsigned int)st.tellg());
-#endif
-	int c = st.peek();
-	assert(c == EOF && st.eof());
-
-	if (lineBreakPairCount)
-		calcBreakList();
-
-	m_loaded = true;
-
-	return true;
-}
 
 //-----------------------------------------------------------------------------
 // Borrowed directly from T3D source without almost any changes
@@ -1088,15 +560,6 @@ void CodeBlock::dumpInstructions(U32 startIp, U32 number, bool upToReturn) //num
 		}
 
 		U32 curInstruction = code[ip++];
-		
-		if (m_onverse)
-		{
-			curInstruction = convertOnverseOpcode(curInstruction);
-		}
-		else if (m_vside)
-		{
-			curInstruction = convertVsideOpcode(curInstruction);
-		}
 
 		printf("0x%08X : 0x%02X/%02u ", ip-1, curInstruction, curInstruction);
 		totalCount++;

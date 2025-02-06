@@ -29,6 +29,7 @@
 // ThinkTanks' DSO format
 //
 // jamesu 2019 - added changes to optionally work with onverse scripts.
+// zfbx 2025 - removed onverse to focus on vside debugging
 //-----------------------------------------------------------------------------
 
 
@@ -47,8 +48,8 @@ namespace Compiler
 	{
 		OP_FUNC_DECL = 0,
 		OP_CREATE_OBJECT = 1,
-		OP_INEXISTENT_2 = 2,
-		OP_INEXISTENT_3 = 3,
+		OP_INEXISTENT_2 = 2, //OP_CREATE_DATABLOCK 1.4.2 | REMOVED 36 | OP_INVALID from Mango
+		OP_INEXISTENT_3 = 3, //OP_NAME_OBJECT 1.4.2 | REMOVED 36 | OP_INVALID from Mango
 		OP_ADD_OBJECT = 4,
 		OP_END_OBJECT = 5,
 		OP_JMPIFFNOT = 6,
@@ -130,7 +131,7 @@ namespace Compiler
 		OP_CALLFUNC_RESOLVE = 70,
 		OP_CALLFUNC = 71,
 
-		OP_INEXISTENT_72 = 72,
+		OP_INEXISTENT_72 = 72, //OP_PROCESS_ARGS,   // NOT REMOVED IN VSIDE
 		OP_ADVANCE_STR = 73,
 		OP_ADVANCE_STR_APPENDCHAR = 74,
 		OP_ADVANCE_STR_COMMA = 75,
@@ -143,38 +144,32 @@ namespace Compiler
 		OP_PUSH_FRAME = 81,
 
 		OP_BREAK = 82,
-
+		OP_INVALID = 83, // from vSide Mango Added?
 
 		// New shit
 		OP_SETCUROBJECT_INTERNAL = 1002,
 		OP_FINISH_OBJECT = 1003,
 
-			OP_RETURN_VOID = 1004,
-			OP_RETURN_UINT = 1005,
-			OP_RETURN_FLT = 1006,
-			OP_DOCBLOCK_STR = 1007,
+		OP_RETURN_VOID = 1004,
+		OP_RETURN_UINT = 1005,
+		OP_RETURN_FLT = 1006,
+		OP_DOCBLOCK_STR = 1007,
 
 
-			OP_PUSH_UINT = 1008,
-			OP_PUSH_FLT = 1009,
-			OP_PUSH_VAR = 1010,
+		OP_PUSH_UINT = 1008,
+		OP_PUSH_FLT = 1009,
+		OP_PUSH_VAR = 1010,
 
-			OP_ASSERT = 1011,
-			OP_ITER_BEGIN = 1012,
-			OP_ITER_BEGIN_STR = 1013,
-			OP_ITER = 1014,
-			OP_ITER_END = 1015,
+		OP_ASSERT = 1011,
+		OP_ITER_BEGIN = 1012,
+		OP_ITER_BEGIN_STR = 1013,
+		OP_ITER = 1014,
+		OP_ITER_END = 1015,
 
-			OP_COPYVAR_TO_NONE = 1016,
-			OP_SETCURFIELD_TYPE = 1017,
+		OP_COPYVAR_TO_NONE = 1016,
+		OP_SETCURFIELD_TYPE = 1017,
 
-		OP_INVALID = 1000
-	};
-
-
-	enum OnverseCompiledOpcodes
-	{
-
+		// OP_INVALID = 1000
 	};
 
 	// Call types

@@ -7,10 +7,12 @@
 // ThinkTanks' DSO format
 //
 // jamesu 2019 - added changes to optionally work with onverse scripts.
+// zfbx 2025 - removed onverse to focus on vside debugging
 //-----------------------------------------------------------------------------
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <iostream>
 
 #include "codeBlock.h"
 #include "consoleDump.h"
@@ -24,17 +26,15 @@ void usage(int argc, char *argv[]) {
 	cerr << "\t--hexdump : Dump code block in hexadecimal format\n";
 	cerr << "\t\tNote: --strings --hexdump replaces string references in the hexdump with identifiers\n";
 	cerr << "\t--disassemble : Dump disassembled instructions\n";
-	cerr << "\t--decompile : Decompile script\n";
+	cerr << "\t--nodecompile : Don't decompile script\n";
 	cerr << "\t--wait : Wait for key press after conclusion\n";
-	cerr << "\t--onverse : Assume input script is an onverse script\n";
-	cerr << "\t--vside : Assume input script is a vside script\n";
 	cerr << "All commands output to stdout. To write to a file, redirect it to a file, i.e.\n";
 	cerr << argv[0] << " <DSO filename> [options] > [output_filename]\n";
 }
 
 int main(int argc, char *argv[])
 {
-	if (argc < 3) {
+	if (argc < 2) {
 		usage(argc, argv);
 		exit(EXIT_FAILURE);
 	}
@@ -45,10 +45,9 @@ int main(int argc, char *argv[])
 	bool strings = false;
 	bool hexdump = false;
 	bool disassemble = false;
-	bool decompile = false;
+	bool decompile = true;
 	bool wait = false;
-	bool onverse = false;
-	bool vside = false;
+	bool pipeonly = false;
 
 	for (int i = 2; i < argc; i++) {
 		char *curArg = argv[i];
@@ -59,14 +58,12 @@ int main(int argc, char *argv[])
 			hexdump = true;
 		else if (strcmp(curArg, "--disassemble") == 0)
 			disassemble = true;
-		else if (strcmp(curArg, "--decompile") == 0)
-			decompile = true;
+		else if (strcmp(curArg, "--nodecompile") == 0) // why wouldn't you want it to decompile? :P
+			decompile = false;
 		else if (strcmp(curArg, "--wait") == 0)
 			wait = true;
-		else if (strcmp(curArg, "--onverse") == 0)
-			onverse = true;
-		else if (strcmp(curArg, "--vside") == 0)
-			vside = true;
+		else if (strcmp(curArg, "--pipeonly") == 0)
+			pipeonly = true;
 		else {
 			cerr << "Invalid argument " << curArg << endl;
 			usage(argc, argv);
@@ -79,26 +76,8 @@ int main(int argc, char *argv[])
 
 	CodeBlock cb;
 
-	cb.m_onverse = onverse;
-	cb.m_vside = vside;
-
-	if (onverse)
-	{
-		if (!cb.readOnverse(fileName)) {
-			exit(EXIT_FAILURE);
-		}
-	}
-	else if (vside)
-	{
-		if (!cb.readVside(fileName)) {
-			exit(EXIT_FAILURE);
-		}
-	}
-	else
-	{
-		if (!cb.read(fileName)) {
-			exit(EXIT_FAILURE);
-		}
+	if (!cb.readVside(fileName)) {
+		exit(EXIT_FAILURE);
 	}
 	
 	if (hexdump)
@@ -115,8 +94,13 @@ int main(int argc, char *argv[])
 		cout << Decompile(cb);
 	}
 
-	//std::string fileName_out = "tests/append_char.cs";
-	//DecompileWrite(fileName_out, cb);
+	if (!pipeonly) {
+		std::string fileName_out = fileName;
+		if (fileName_out.length() >= 4) {
+			fileName_out.erase(fileName_out.length() - 4); 
+		}
+		DecompileWrite(fileName_out, cb);
+	}
 
 	cerr << "Done.";
 
