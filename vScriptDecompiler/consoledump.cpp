@@ -307,7 +307,7 @@ void expandEscape(char *dest, const char *src)
 		}
 		else if (c == '\'')
 		{
-			*dest++ = '\\';
+			//*dest++ = '\\';
 			*dest++ = '\'';
 		}
 		else if ((c >= 1 && c <= 7) ||
@@ -1479,7 +1479,6 @@ public:
 				popExpr();
 			} break;
 
-			// TODO: why was this commented out? -Tony
 			case OP_RETURN_VOID:
 			{
 				CheckFrameWrite();
@@ -1489,7 +1488,7 @@ public:
 				if (_FRAME == 0 || (curFrame.type == Frame::FUNC && curFrame.end == ip)) {
 					; // skip return for last instruction of frame
 				} else {
-					//writer.append("return").endLine();
+					// writer.append("return").endLine();
 				}
 				collapseExpr();
 			} break;
