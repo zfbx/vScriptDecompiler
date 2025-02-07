@@ -212,3 +212,4 @@ _Pvt_Extensions/
 ModelManifest.xml
 /vScriptDecompiler.VC.opendb
 *.cs
+!examples/*.cs
