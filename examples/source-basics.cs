@@ -4,6 +4,7 @@ exec("./arrays.cs");
 echo("Loading basics.cs");
 $GlobalInt = 42;
 $GlobalString = "Don't Panic";
+$Characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890!@#$%^&*()_-+=[]{}';:,./\\|\"";
 
 $myArray[0] = "Hello";
 $myArray[1] = "TorqueScript";
