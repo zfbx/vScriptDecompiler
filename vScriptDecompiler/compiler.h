@@ -43,7 +43,7 @@
 namespace Compiler
 {
 	/// The opcodes for the TorqueScript VM.
-	/// Reverse engineered for ThinkTanks, DSO version 21
+	/// Reverse engineered for vSide, DSO version ??
 	enum CompiledInstructions
 	{
 		OP_FUNC_DECL = 0,

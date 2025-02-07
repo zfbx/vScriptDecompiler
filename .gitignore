@@ -210,5 +210,5 @@ FakesAssemblies/
 GeneratedArtifacts/
 _Pvt_Extensions/
 ModelManifest.xml
-/ThinkTanksScriptDecompiler.VC.opendb
+/vScriptDecompiler.VC.opendb
 *.cs
